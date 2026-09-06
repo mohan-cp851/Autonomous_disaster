@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+
+{% block page_title %}AI Disaster engines{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- AI Disaster Risk Predictor -->
+    <div class="col-lg-6 col-12">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="card-title fw-bold m-0 text-dark"><i class="fa-solid fa-brain me-2 text-info"></i>AI Risk Prediction (scikit-learn)</h5>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted mb-4">Input environmental parameters to calculate real-time probability of disaster events using the Random Forest classifier.</p>
+                
+                <form id="risk-predict-form">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Rainfall (mm)</label>
+                            <input type="number" step="any" class="form-control form-control-sm" id="p-rainfall" value="25.0" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Temperature (°C)</label>
+                            <input type="number" step="any" class="form-control form-control-sm" id="p-temp" value="28.5" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Water Level (m)</label>
+                            <input type="number" step="any" class="form-control form-control-sm" id="p-water" value="1.2" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Seismic Intensity (Richter)</label>
+                            <input type="number" step="any" class="form-control form-control-sm" id="p-seismic" value="0.2" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Wind Speed (km/h)</label>
+                            <input type="number" step="any" class="form-control form-control-sm" id="p-wind" value="12.0" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Humidity (%)</label>
+                            <input type="number" step="any" class="form-control form-control-sm" id="p-humidity" value="65.0" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-info btn-sm w-100 fw-bold mt-4"><i class="fa-solid fa-calculator me-2"></i>Compute Disaster Risk Probability</button>
+                </form>
+
+                <!-- Result output cards -->
+                <div id="risk-result" class="mt-4 p-3 bg-light rounded border d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold m-0 text-dark"><i class="fa-solid fa-chart-simple me-2"></i>Prediction Output</h6>
+                        <span class="badge text-uppercase px-3 py-1" id="risk-level-badge">LOW</span>
+                    </div>
+                    
+                    <div class="p-2 mb-3 bg-white rounded border border-secondary border-opacity-10 d-flex justify-content-between">
+                        <span class="fw-bold small text-secondary">Primary Threat:</span>
+                        <span class="fw-bold text-danger small" id="risk-primary-threat">--</span>
+                    </div>
+
+                    <div id="risk-progress-bars">
+                        <!-- Progress bars filled dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Drone / Satellite Image Analyzer (OpenCV) -->
+    <div class="col-lg-6 col-12">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="card-title fw-bold m-0 text-dark"><i class="fa-solid fa-satellite me-2 text-info"></i>Satellite & Drone Image Computer Vision (OpenCV)</h5>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted mb-4">Upload aerial drone or satellite imagery to run HSV segmentations and edge metrics. Identifies wildfires, flood zones, or debris cracks.</p>
+                
+                <form id="image-analyze-form" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="sat-file" class="form-label small fw-bold">Select Drone / Satellite Image</label>
+                        <input class="form-control form-control-sm" type="file" id="sat-file" accept="image/*" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold"><i class="fa-solid fa-magnifying-glass-chart me-2"></i>Execute Image Processing Pipeline</button>
+                </form>
+
+                <!-- Processing result panel -->
+                <div id="image-result" class="mt-4 d-none">
+                    <div class="row g-3">
+                        <div class="col-md-6 col-12">
+                            <div class="small fw-bold mb-2">Original Upload</div>
+                            <img id="img-original" class="img-fluid rounded border shadow-sm" style="max-height: 180px;" alt="Original">
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <div class="small fw-bold mb-2 text-danger">CV Output Overlay</div>
+                            <img id="img-annotated" class="img-fluid rounded border shadow-sm" style="max-height: 180px;" alt="CV Highlight">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3 p-3 bg-dark text-white rounded">
+                        <div class="d-flex justify-content-between align-items-center mb-2 border-bottom border-secondary pb-2">
+                            <span class="small fw-bold text-white-50">Disaster Terrain Classification:</span>
+                            <span class="badge bg-warning text-dark fw-bold text-uppercase" id="img-threat-type">--</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="small fw-bold text-white-50">Estimated Impact Severity:</span>
+                            <span class="fw-bold text-danger" id="img-severity-pct">0%</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <span class="small fw-bold text-white-50">Severity Level:</span>
+                            <span class="badge bg-danger fw-bold" id="img-severity-level">--</span>
+                        </div>
+
+                        <div class="mt-3 border-top border-secondary pt-3">
+                            <span class="small fw-bold text-white-50">Recommended Precautions:</span>
+                            <ul class="small mt-2 mb-0" id="img-precautions">
+                                <li>--</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Risk Prediction Form Submit
+    document.getElementById('risk-predict-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const payload = {
+            rainfall: document.getElementById('p-rainfall').value,
+            temperature: document.getElementById('p-temp').value,
+            water_level: document.getElementById('p-water').value,
+            seismic: document.getElementById('p-seismic').value,
+            wind_speed: document.getElementById('p-wind').value,
+            humidity: document.getElementById('p-humidity').value
+        };
+
+        fetch('/api/ai/predict', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+
+            document.getElementById('risk-result').classList.remove('d-none');
+            
+            // Set level badge style
+            const b = document.getElementById('risk-level-badge');
+            b.innerText = data.risk_level;
+            b.className = 'badge text-uppercase px-3 py-1 ';
+            if (data.risk_level === 'Low') b.classList.add('bg-success');
+            else if (data.risk_level === 'Medium') b.classList.add('bg-info', 'text-dark');
+            else if (data.risk_level === 'High') b.classList.add('bg-warning', 'text-dark');
+            else b.classList.add('bg-danger');
+
+            document.getElementById('risk-primary-threat').innerText = data.highest_risk_type + " (" + data.highest_risk_probability + "%)";
+
+            // Draw progress bars
+            const progressContainer = document.getElementById('risk-progress-bars');
+            progressContainer.innerHTML = '';
+            
+            for (const [threat, prob] of Object.entries(data.predictions)) {
+                if (threat.includes("No Risk")) continue; // Skip displaying Normal state progress bar
+                
+                const roundedProb = Math.round(prob * 10) / 10;
+                const barHtml = `
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="fw-semibold">${threat}</span>
+                            <span class="text-muted">${roundedProb}%</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-info" role="progressbar" style="width: ${roundedProb}%" aria-valuenow="${roundedProb}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                `;
+                progressContainer.insertAdjacentHTML('beforeend', barHtml);
+            }
+        });
+    });
+
+    // Image Analysis Form Submit
+    document.getElementById('image-analyze-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const fileInput = document.getElementById('sat-file');
+        if (!fileInput.files.length) return;
+        
+        const formData = new FormData();
+        formData.append('image', fileInput.files[0]);
+
+        fetch('/api/ai/analyze-image', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+
+            document.getElementById('image-result').classList.remove('d-none');
+            
+            // Set image sources
+            document.getElementById('img-original').src = data.original_url + "?t=" + new Date().getTime();
+            document.getElementById('img-annotated').src = data.annotated_url + "?t=" + new Date().getTime();
+
+            document.getElementById('img-threat-type').innerText = data.disaster_type;
+            document.getElementById('img-severity-pct').innerText = data.severity_score + "%";
+            document.getElementById('img-severity-level').innerText =
+                data.severity_level || "--";
+
+            const precautionsList = document.getElementById('img-precautions');
+            precautionsList.innerHTML = "";
+
+            if (data.precautions && data.precautions.length > 0) {
+                data.precautions.forEach(function(item) {
+                    const li = document.createElement('li');
+                    li.innerText = item;
+                    precautionsList.appendChild(li);
+                });
+            } else {
+                const li = document.createElement('li');
+                li.innerText = "No specific precautions available.";
+                precautionsList.appendChild(li);
+            }
+        })
+        .catch(err => {
+            alert("Error running image processing model.");
+        });
+    });
+</script>
+{% endblock %}

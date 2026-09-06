@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Operational Resource Documents{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Main Guidelines Catalog -->
+    <div class="col-lg-8 col-12">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="card-title fw-bold m-0 text-dark"><i class="fa-solid fa-folder-open me-2 text-info"></i>Guidelines & Operations Manual Catalog</h5>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted mb-4">Standard operational guidelines, manuals, and templates published by the National Disaster Management Authority (NDMA) and State disaster response units.</p>
+                
+                <div class="row g-3">
+                    <!-- Item 1 -->
+                    <div class="col-md-6 col-12">
+                        <div class="p-3 border rounded h-100 bg-white d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge bg-danger shadow-xs">PDF</span>
+                                <small class="text-muted">4.2 MB</small>
+                            </div>
+                            <h6 class="fw-bold mb-2">NDMA Flood Management Guide</h6>
+                            <p class="small text-muted flex-grow-1">Official mitigation steps, local planning checklists, and flood contour zoning parameters for civic officers.</p>
+                            <a href="{{ url_for('resources_links.download_file', filename='NDMA_Flood_Management_Guide.pdf') }}"
+                               class="btn btn-outline-secondary btn-xs fw-bold mt-2 align-self-start">
+                                <i class="fa-solid fa-download me-1"></i>Download Guide
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Item 2 -->
+                    <div class="col-md-6 col-12">
+                        <div class="p-3 border rounded h-100 bg-white d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge bg-warning text-dark shadow-xs">DOCX</span>
+                                <small class="text-muted">1.8 MB</small>
+                            </div>
+                            <h6 class="fw-bold mb-2">Rescue Operations Standard Forms</h6>
+                            <p class="small text-muted flex-grow-1">Standard template forms to request central NDRF team dispatch or cargo helicopter drops during active disasters.</p>
+                            <a href="{{ url_for('resources_links.download_file', filename='Rescue_Operations_Standard_Forms.docx') }}" 
+                               class="btn btn-outline-secondary btn-xs fw-bold mt-2 align-self-start"> 
+                                <i class="fa-solid fa-download me-1"></i>Download Form 
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Item 3 -->
+                    <div class="col-md-6 col-12">
+                        <div class="p-3 border rounded h-100 bg-white d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge bg-success shadow-xs">CSV</span>
+                                <small class="text-muted">120 KB</small>
+                            </div>
+                            <h6 class="fw-bold mb-2">Maharashtra Safe Shelters Directory</h6>
+                            <p class="small text-muted flex-grow-1">List of coordinates, capacity limits, and emergency phone numbers for all municipal relief camps in the state.</p>
+                            <a href="{{ url_for('resources_links.download_file', filename='test_resource.csv') }}" class="btn btn-outline-secondary btn-xs fw-bold mt-2 align-self-start"><i class="fa-solid fa-download me-1"></i>Download CSV</a>
+                        </div>
+                    </div>
+
+                    <!-- Item 4 -->
+                    <div class="col-md-6 col-12">
+                        <div class="p-3 border rounded h-100 bg-white d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge bg-info text-dark shadow-xs">XLSX</span>
+                                <small class="text-muted">850 KB</small>
+                            </div>
+                            <h6 class="fw-bold mb-2">Disaster Inventory Template</h6>
+                            <p class="small text-muted flex-grow-1">Inventory logging sheet for local municipal warehouses to list food packets, medical kits, and vehicles.</p>
+                            <a href="{{ url_for('resources_links.download_file', filename='Disaster_Inventory_Template.xlsx') }}"
+                               class="btn btn-outline-secondary btn-xs fw-bold mt-2 align-self-start">
+                                <i class="fa-solid fa-download me-1"></i>Download Sheet
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Uploads Catalog -->
+                {% if uploaded_files %}
+                <h6 class="fw-bold mt-4 mb-3 border-top pt-3 text-secondary">Uploaded Resource Documents:</h6>
+                <div class="list-group">
+                    {% for f in uploaded_files %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-secondary me-2">{{ f.ext }}</span>
+                            <span class="fw-semibold text-dark">{{ f.name }}</span>
+                            <small class="text-muted ms-2">({{ f.size }})</small>
+                        </div>
+                        <a href="{{ url_for('resources_links.download_file', filename=f.name) }}" class="btn btn-link btn-sm text-info"><i class="fa-solid fa-download"></i></a>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Manual Section -->
+    <div class="col-lg-4 col-12">
+        <div class="card border-0 shadow-sm h-100 border-start border-4 border-info">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title fw-bold m-0 text-dark"><i class="fa-solid fa-file-arrow-up me-2 text-info"></i>Upload Manual / Policy</h5>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted mb-4">Upload local disaster maps, mock guides, or rescue rosters to the command directory. Supports PDF, DOCX, CSV, and XLSX formats.</p>
+                
+                <form action="{{ url_for('resources_links.upload_file') }}" method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="res-file" class="form-label small fw-bold">Select File</label>
+                        <input class="form-control form-control-sm" type="file" id="res-file" name="file" accept=".pdf,.docx,.csv,.xlsx" required>
+                    </div>
+                    <button type="submit" class="btn btn-info btn-sm w-100 fw-bold"><i class="fa-solid fa-upload me-2"></i>Upload to Command Catalog</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

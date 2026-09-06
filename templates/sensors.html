@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+
+{% block page_title %}IoT Sensor Telemetry Streams{% endblock %}
+
+{% block content %}
+<!-- Live Simulation Controls -->
+<div class="card border-0 shadow-sm mb-4 border-start border-4 border-warning">
+    <div class="card-header bg-white py-3">
+        <h5 class="card-title fw-bold m-0 text-dark"><i class="fa-solid fa-gamepad me-2 text-warning"></i>Sensor Simulation Controller</h5>
+    </div>
+    <div class="card-body">
+        <p class="small text-muted mb-3">Simulate severe environmental disasters by forcing telemetry spikes on physical sensor nodes. This automatically triggers critical incidents and maps threat boundaries.</p>
+        <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-outline-danger btn-sm fw-bold" onclick="triggerSimEvent(4, 'flood_spike')"><i class="fa-solid fa-cloud-showers-heavy me-2"></i>Heavy Rainfall (Kolhapur)</button>
+            <button class="btn btn-outline-danger btn-sm fw-bold" onclick="triggerSimEvent(6, 'seismic_shock')"><i class="fa-solid fa-house-crack me-2"></i>Seismic Tremor (Koyna Dam)</button>
+            <button class="btn btn-outline-danger btn-sm fw-bold" onclick="triggerSimEvent(8, 'wind_gust')"><i class="fa-solid fa-wind me-2"></i>Gale Winds (Mumbai Coast)</button>
+            <button class="btn btn-outline-danger btn-sm fw-bold" onclick="triggerSimEvent(7, 'heat_wave')"><i class="fa-solid fa-temperature-arrow-up me-2"></i>High Heatwave (Nashik Forest)</button>
+            <button class="btn btn-success btn-sm fw-bold ms-auto" onclick="resetAllSensors()"><i class="fa-solid fa-rotate-left me-2"></i>Reset Telemetry to Normal</button>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Sensors Grid -->
+    <div class="col-lg-8 col-12">
+        <div class="row g-3" id="sensors-grid-container">
+            {% for s in sensors %}
+            <div class="col-md-6 col-12 sensor-card-item" data-sensor-id="{{ s.id }}">
+                <div class="card border-0 shadow-sm h-100 border-start border-4 {% if s.status == 'Critical' %}border-danger{% elif s.status == 'Warning' %}border-warning{% else %}border-info{% endif %}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="badge {% if s.status == 'Critical' %}bg-danger{% elif s.status == 'Warning' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %} text-uppercase shadow-sm" id="s-badge-{{ s.id }}">
+                                {{ s.status }}
+                            </span>
+                            <small class="text-muted"><i class="fa-solid fa-location-dot me-1"></i>{{ s.location_name }}</small>
+                        </div>
+                        <h6 class="fw-bold mb-1">{{ s.name }}</h6>
+                        <small class="text-secondary d-block mb-3">Category: {{ s.sensor_type }}</small>
+                        
+                        <div class="d-flex justify-content-between align-items-end">
+                            <div>
+                                <small class="text-muted d-block" style="font-size:0.75rem;">CURRENT TELEMETRY</small>
+                                <span class="fs-3 fw-bold text-dark" id="s-val-{{ s.id }}">{{ s.current_value|round(2) }}</span>
+                                <span class="fw-semibold text-secondary" id="s-unit-{{ s.id }}">{{ s.unit }}</span>
+                            </div>
+                            <div class="text-end" style="font-size: 0.75rem;">
+                                <span class="d-block text-muted">Warning: {{ s.warning_threshold }}</span>
+                                <span class="d-block text-danger font-semibold">Critical: {{ s.critical_threshold }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Alert / Simulation log -->
+    <div class="col-lg-4 col-12">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="card-title fw-bold m-0 text-dark"><i class="fa-solid fa-terminal me-2 text-info"></i>Simulation Telemetry Logs</h5>
+            </div>
+            <div class="card-body p-0" style="max-height: 480px; overflow-y: auto;">
+                <ul class="list-group list-group-flush" id="simulation-logs-feed">
+                    {% if alerts %}
+                        {% for alert in alerts %}
+                        <li class="list-group-item p-3 border-start border-4 {% if alert.severity == 'Critical' %}border-danger bg-danger-subtle bg-opacity-10{% elif alert.severity == 'Warning' %}border-warning bg-warning-subtle bg-opacity-10{% else %}border-info{% endif %}">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="badge {% if alert.severity == 'Critical' %}bg-danger{% elif alert.severity == 'Warning' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %} text-uppercase" style="font-size:0.6rem;">{{ alert.severity }}</span>
+                                <small class="text-muted">{{ alert.timestamp.strftime('%H:%M:%S') }}</small>
+                            </div>
+                            <div class="small fw-semibold text-dark">{{ alert.message }}</div>
+                            <small class="text-secondary" style="font-size: 0.7rem;"><i class="fa-solid fa-location-dot me-1"></i>{{ alert.location_name }}</small>
+                        </li>
+                        {% endfor %}
+                    {% else %}
+                        <li class="list-group-item text-center text-muted p-4" id="empty-logs-placeholder">
+                            <i class="fa-solid fa-chart-line fa-2x mb-2"></i>
+                            <p class="small m-0">Waiting for live sensor updates...</p>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Periodically update sensor displays
+    function pollSensorTelemetry() {
+        fetch('/api/sensors/data')
+        .then(response => response.json())
+        .then(sensors => {
+            sensors.forEach(s => {
+                const valEl = document.getElementById('s-val-' + s.id);
+                const badgeEl = document.getElementById('s-badge-' + s.id);
+                const cardEl = document.querySelector('[data-sensor-id="' + s.id + '"] .card');
+                
+                if (valEl) {
+                    valEl.innerText = s.current_value;
+                }
+                
+                if (badgeEl) {
+                    badgeEl.innerText = s.status;
+                    badgeEl.className = 'badge text-uppercase shadow-sm ';
+                    if (s.status === 'Critical') {
+                        badgeEl.classList.add('bg-danger');
+                        cardEl.className = 'card border-0 shadow-sm h-100 border-start border-4 border-danger';
+                    } else if (s.status === 'Warning') {
+                        badgeEl.classList.add('bg-warning', 'text-dark');
+                        cardEl.className = 'card border-0 shadow-sm h-100 border-start border-4 border-warning';
+                    } else {
+                        badgeEl.classList.add('bg-info', 'text-dark');
+                        cardEl.className = 'card border-0 shadow-sm h-100 border-start border-4 border-info';
+                    }
+                }
+            });
+        });
+    }
+
+    setInterval(pollSensorTelemetry, 3000);
+
+    function triggerSimEvent(sensorId, eventType) {
+        fetch('/api/sensors/trigger-event', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ sensor_id: sensorId, event_type: eventType })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                // Instantly update values
+                pollSensorTelemetry();
+                // Add log item to the telemetry container
+                appendLocalLog(data.message, data.status || 'Warning');
+            } else {
+                alert(data.error || 'Failed to trigger event');
+            }
+        });
+    }
+
+    function resetAllSensors() {
+        // Reset Kolhapur Panchganga Water Level
+        triggerSimEvent(4, 'reset');
+        // Reset Koyna Dam Seismic
+        triggerSimEvent(6, 'reset');
+        // Reset Mumbai wind
+        triggerSimEvent(8, 'reset');
+        // Reset Nashik forest temperature
+        triggerSimEvent(7, 'reset');
+        
+        setTimeout(() => {
+            location.reload();
+        }, 1500);
+    }
+
+    function appendLocalLog(msg, severity) {
+        const logsFeed = document.getElementById('simulation-logs-feed');
+        const placeholder = document.getElementById('empty-logs-placeholder');
+        if (placeholder) placeholder.remove();
+        
+        const now = new Date();
+        const timeStr = now.toTimeString().split(' ')[0];
+        
+        const borderClass = severity === 'Critical' ? 'border-danger bg-danger-subtle bg-opacity-10' :
+                            severity === 'Warning' ? 'border-warning bg-warning-subtle bg-opacity-10' : 'border-info';
+        const badgeClass = severity === 'Critical' ? 'bg-danger' :
+                           severity === 'Warning' ? 'bg-warning text-dark' : 'bg-info text-dark';
+                           
+        const logHtml = `
+            <li class="list-group-item p-3 border-start border-4 ${borderClass}">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="badge ${badgeClass} text-uppercase" style="font-size:0.6rem;">${severity}</span>
+                    <small class="text-muted">${timeStr}</small>
+                </div>
+                <div class="small fw-semibold text-dark">${msg}</div>
+                <small class="text-secondary" style="font-size: 0.7rem;"><i class="fa-solid fa-location-dot me-1"></i>Simulation System</small>
+            </li>
+        `;
+        logsFeed.insertAdjacentHTML('afterbegin', logHtml);
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Interactive disaster control map{% endblock %}
+
+{% block head %}
+<style>
+    #map-container {
+        height: 600px;
+        width: 100%;
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Map Canvas -->
+    <div class="col-lg-9 col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-2">
+                <div id="map-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Controls Sidebar -->
+    <div class="col-lg-3 col-12">
+        <!-- Layer Filters -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="card-title fw-bold m-0 text-dark"><i class="fa-solid fa-layer-group me-2 text-info"></i>Layer Controls</h5>
+            </div>
+            <div class="card-body">
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input layer-toggle" type="checkbox" id="toggle-incidents" checked>
+                    <label class="form-check-label fw-semibold" for="toggle-incidents">Emergency Incidents</label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input layer-toggle" type="checkbox" id="toggle-sensors" checked>
+                    <label class="form-check-label fw-semibold" for="toggle-sensors">IoT Sensors</label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input layer-toggle" type="checkbox" id="toggle-teams" checked>
+                    <label class="form-check-label fw-semibold" for="toggle-teams">Rescue Teams</label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input layer-toggle" type="checkbox" id="toggle-shelters" checked>
+                    <label class="form-check-label fw-semibold" for="toggle-shelters">Relief Shelters</label>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input layer-toggle" type="checkbox" id="toggle-routes" checked>
+                    <label class="form-check-label fw-semibold" for="toggle-routes">Evacuation Routes</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Evacuation Route Calculator -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="card-title fw-bold m-0 text-dark"><i class="fa-solid fa-route me-2 text-info"></i>Route Calculator</h5>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted mb-3">Compare distance and hazard obstacles between reporting points.</p>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Source Node</label>
+                    <select class="form-select form-select-sm" id="route-source">
+                        <option value="pune">Pune Center (18.5204, 73.8567)</option>
+                        <option value="mumbai">Mumbai Coast (18.9500, 72.8200)</option>
+                        <option value="kolhapur">Kolhapur Riverbank (16.7050, 74.2433)</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Destination Shelter</label>
+                    <select class="form-select form-select-sm" id="route-dest">
+                        <option value="pune-shelter">Pune Community Hall (18.5300, 73.8600)</option>
+                        <option value="mumbai-shelter">Mumbai Stadium Camp (19.0000, 72.8300)</option>
+                        <option value="kolhapur-shelter">Kolhapur Temple Camp (16.7200, 74.2600)</option>
+                    </select>
+                </div>
+                <button class="btn btn-info btn-sm w-100 fw-bold" onclick="calculateRoute()"><i class="fa-solid fa-magnifying-glass-location me-2"></i>Analyze Safety</button>
+                
+                <div id="route-result" class="mt-3 p-2 bg-light rounded border border-secondary border-opacity-10 d-none">
+                    <div class="small fw-bold text-dark mb-1" id="route-result-title">Analyzing...</div>
+                    <div class="small text-muted" id="route-result-details">--</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+{% endblock %}

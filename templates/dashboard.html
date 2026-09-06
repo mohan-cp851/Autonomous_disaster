@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Emergency command Dashboard{% endblock %}
+
+{% block content %}
+<!-- Statistics Row -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-danger text-white h-100">
+            <div class="card-body d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="text-uppercase mb-2 text-white-50 fw-semibold" style="font-size:0.8rem;">Active Incidents</h6>
+                    <h2 class="m-0 fw-bold">{{ active_incidents }}</h2>
+                </div>
+                <div class="bg-white bg-opacity-25 rounded p-3">
+                    <i class="fa-solid fa-fire-flame-simple fa-2x"></i>
+                </div>
+            </div>
+            <div class="card-footer bg-dark bg-opacity-10 border-0 py-2">
+                <a href="{{ url_for('incident.list_incidents') }}" class="text-white text-decoration-none small d-flex align-items-center justify-content-between">
+                    <span>View Emergency Feed</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-warning text-dark h-100">
+            <div class="card-body d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="text-uppercase mb-2 text-dark-50 fw-semibold" style="font-size:0.8rem;">IoT Warnings</h6>
+                    <h2 class="m-0 fw-bold">{{ warning_sensors + critical_sensors }} / {{ total_sensors }}</h2>
+                </div>
+                <div class="bg-dark bg-opacity-10 rounded p-3">
+                    <i class="fa-solid fa-triangle-exclamation fa-2x"></i>
+                </div>
+            </div>
+            <div class="card-footer bg-dark bg-opacity-10 border-0 py-2">
+                <a href="{{ url_for('iot.index') }}" class="text-dark text-decoration-none small d-flex align-items-center justify-content-between">
+                    <span>Sensor Telemetry</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-primary text-white h-100">
+            <div class="card-body d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="text-uppercase mb-2 text-white-50 fw-semibold" style="font-size:0.8rem;">Dispatched Teams</h6>
+                    <h2 class="m-0 fw-bold">{{ dispatched_teams }} / {{ dispatched_teams + available_teams }}</h2>
+                </div>
+                <div class="bg-white bg-opacity-25 rounded p-3">
+                    <i class="fa-solid fa-truck-medical fa-2x"></i>
+                </div>
+            </div>
+            <div class="card-footer bg-dark bg-opacity-10 border-0 py-2">
+                <a href="{{ url_for('resources.index') }}" class="text-white text-decoration-none small d-flex align-items-center justify-content-between">
+                    <span>Manage Dispatch</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-success text-white h-100">
+            <div class="card-body d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="text-uppercase mb-2 text-white-50 fw-semibold" style="font-size:0.8rem;">Shelter Occupancy</h6>
+                    <h2 class="m-0 fw-bold">{% if total_capacity > 0 %}{{ (total_occupancy * 100 // total_capacity) }}{% else %}0{% endif %}%</h2>
+                </div>
+                <div class="bg-white bg-opacity-25 rounded p-3">
+                    <i class="fa-solid fa-house-chimney-user fa-2x"></i>
+                </div>
+            </div>
+            <div class="card-footer bg-dark bg-opacity-10 border-0 py-2">
+                <a href="{{ url_for('resources.index') }}" class="text-white text-decoration-none small d-flex align-items-center justify-content-between">
+                    <span>Shelter Inventory</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Row -->
+<div class="row g-4 mb-4">
+    <!-- Charts Section -->
+    <div class="col-lg-8 col-12">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="card-title fw-bold m-0 text-dark"><i class="fa-solid fa-cubes me-2 text-info"></i>Resource Inventories Stock</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="resourceChart" style="max-height: 250px;"></canvas>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-6 col-12">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h5 class="card-title fw-bold m-0 text-dark"><i class="fa-solid fa-list-check me-2 text-info"></i>Incident Status Breakdown</h5>
+                    </div>
+                    <div class="card-body d-flex align-items-center justify-content-center">
+                        <canvas id="incidentChart" style="max-height: 200px; max-width: 200px;"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-12">
+                <div class="card border-0 shadow-sm h-100 bg-dark text-white border-start border-4 border-warning">
+                    <div class="card-body">
+                        <h5 class="card-title fw-bold text-warning mb-3"><i class="fa-solid fa-microchip me-2"></i>System Status</h5>
+                        <p class="card-text small text-white-50">Monitoring 5 districts (Pune, Mumbai, Nashik, Kolhapur, Nagpur) with active IoT sensor simulations.</p>
+                        <div class="border-top border-secondary pt-3 mt-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small text-white-50">Telemetry Link Status</span>
+                                <span class="badge bg-success">Online</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small text-white-50">AI Predictor State</span>
+                                <span class="badge bg-info">Active</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="small text-white-50">Disaster Detection Engine</span>
+                                <span class="badge bg-danger">Alert Mode</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Alerts Log -->
+    <div class="col-lg-4 col-12">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h5 class="card-title fw-bold m-0 text-dark"><i class="fa-solid fa-bell me-2 text-danger animate-pulse"></i>Emergency Alerts Log</h5>
+                <span class="badge bg-danger-subtle text-danger">{{ active_alerts|length }} Active</span>
+            </div>
+            <div class="card-body p-0" style="max-height: 480px; overflow-y: auto;">
+                <ul class="list-group list-group-flush">
+                    {% if active_alerts %}
+                        {% for alert in active_alerts %}
+                        <li class="list-group-item p-3 {% if alert.severity == 'Critical' %}bg-danger-subtle bg-opacity-25 border-start border-4 border-danger{% elif alert.severity == 'Warning' %}bg-warning-subtle bg-opacity-25 border-start border-4 border-warning{% else %}border-start border-4 border-info{% endif %}">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="badge {% if alert.severity == 'Critical' %}bg-danger{% elif alert.severity == 'Warning' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %} text-uppercase" style="font-size:0.65rem;">
+                                    {{ alert.severity }}
+                                </span>
+                                <small class="text-muted">{{ alert.timestamp.strftime('%H:%M:%S') }}</small>
+                            </div>
+                            <div class="small fw-semibold text-dark">{{ alert.message }}</div>
+                            <div class="d-flex justify-content-between align-items-center mt-1">
+                                <small class="text-secondary" style="font-size: 0.75rem;"><i class="fa-solid fa-location-dot me-1"></i>{{ alert.location_name }}</small>
+                                <span class="text-muted small" style="font-size: 0.7rem;">{{ alert.alert_type }}</span>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    {% else %}
+                        <li class="list-group-item text-center text-muted p-4">
+                            <i class="fa-regular fa-bell-slash fa-2x mb-2 text-muted"></i>
+                            <p class="m-0 small">No active emergency alerts recorded.</p>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Resources Chart
+    const ctxRes = document.getElementById('resourceChart').getContext('2d');
+    new Chart(ctxRes, {
+        type: 'bar',
+        data: {
+            labels: ['Medical Packs', 'Food Bundles', 'Water Flasks (20L)', 'Rescue Vehicles'],
+            datasets: [
+                {
+                    label: 'Available Quantity',
+                    data: [{{ medical_avail }}, {{ food_avail }}, {{ water_avail }}, {{ vehicle_avail }}],
+                    backgroundColor: 'rgba(13, 202, 240, 0.75)',
+                    borderColor: 'rgb(13, 202, 240)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Incident Chart
+    const ctxInc = document.getElementById('incidentChart').getContext('2d');
+    new Chart(ctxInc, {
+        type: 'doughnut',
+        data: {
+            labels: ['Active', 'Under Control', 'Resolved'],
+            datasets: [{
+                data: [{{ active_incidents }}, {{ under_control_incidents }}, {{ resolved_incidents }}],
+                backgroundColor: [
+                    'rgba(220, 53, 69, 0.8)',
+                    'rgba(255, 193, 7, 0.8)',
+                    'rgba(40, 167, 69, 0.8)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 12,
+                        font: { size: 10 }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

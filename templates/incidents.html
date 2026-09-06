@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Emergency Incident reports{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Incident reporter form -->
+    <div class="col-lg-4 col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="card-title fw-bold m-0 text-dark"><i class="fa-solid fa-bullhorn me-2 text-danger"></i>Report Disaster Incident</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('incident.list_incidents') }}" method="POST">
+                    <div class="mb-3">
+                        <label for="title" class="form-label fw-semibold text-secondary">Incident Title</label>
+                        <input type="text" class="form-control form-control-sm" id="title" name="title" required placeholder="e.g. Pune Road Blockage, Heavy Water Logging">
+                    </div>
+                    <div class="mb-3">
+                        <label for="disaster_type" class="form-label fw-semibold text-secondary">Disaster Category</label>
+                        <select class="form-select form-select-sm" id="disaster_type" name="disaster_type">
+                            <option value="flood">Flood</option>
+                            <option value="earthquake">Earthquake</option>
+                            <option value="fire">Wildfire / Structural Fire</option>
+                            <option value="cyclone">Cyclone</option>
+                            <option value="landslide">Landslide</option>
+                            <option value="tsunami">Tsunami</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="severity" class="form-label fw-semibold text-secondary">Threat Severity</label>
+                        <select class="form-select form-select-sm" id="severity" name="severity">
+                            <option value="Low">Low (No Immediate Danger)</option>
+                            <option value="Medium">Medium (Caution Advised)</option>
+                            <option value="High">High (Immediate Action Required)</option>
+                            <option value="Critical">Critical (Severe Life Threat)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="location_name" class="form-label fw-semibold text-secondary">Incident Location</label>
+                        <select class="form-select form-select-sm" id="location_name" name="location_name">
+                            <option value="Pune">Pune District</option>
+                            <option value="Mumbai">Mumbai Metro</option>
+                            <option value="Nashik">Nashik Region</option>
+                            <option value="Kolhapur">Kolhapur Basin</option>
+                            <option value="Nagpur">Nagpur Division</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label fw-semibold text-secondary">Detailed Description</label>
+                        <textarea class="form-control form-control-sm" id="description" name="description" rows="3" placeholder="Provide damage description, stranded citizens, needs..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-danger btn-sm w-100 fw-bold"><i class="fa-solid fa-paper-plane me-2"></i>Submit Emergency Dispatch Report</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Incidents Table / List -->
+    <div class="col-lg-8 col-12">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="card-title fw-bold m-0 text-dark"><i class="fa-solid fa-list-check me-2 text-info"></i>Active Incident Feed</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Incident Details</th>
+                                <th>Severity / Status</th>
+                                <th>Dispatched Team</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if incidents %}
+                                {% for inc in incidents %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ inc.title }}</div>
+                                        <div class="small text-muted">
+                                            <i class="fa-solid fa-location-dot me-1"></i>{{ inc.location_name }} | 
+                                            <span class="text-uppercase fw-semibold">{{ inc.disaster_type }}</span>
+                                        </div>
+                                        <div class="small text-secondary text-truncate" style="max-width:300px;">{{ inc.description or 'No description provided.' }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if inc.severity == 'Critical' %}bg-danger{% elif inc.severity == 'High' %}bg-warning text-dark{% elif inc.severity == 'Medium' %}bg-info text-dark{% else %}bg-secondary{% endif %}">
+                                            {{ inc.severity }}
+                                        </span>
+                                        <span class="badge {% if inc.status == 'Active' %}bg-danger-subtle text-danger border border-danger-subtle{% elif inc.status == 'Under Control' %}bg-warning-subtle text-warning border border-warning-subtle{% else %}bg-success-subtle text-success border border-success-subtle{% endif %}">
+                                            {{ inc.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if inc.dispatched_team %}
+                                            <span class="small fw-semibold text-primary"><i class="fa-solid fa-truck-medical me-1"></i>{{ inc.dispatched_team.name }}</span>
+                                        {% else %}
+                                            <span class="small text-muted"><i class="fa-solid fa-circle-question me-1"></i>None Dispatched</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if current_user.role in ['admin', 'responder'] %}
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    Manage
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li><a class="dropdown-item" href="#" onclick="updateIncidentStatus({{ inc.id }}, 'Under Control')">Set: Under Control</a></li>
+                                                    <li><a class="dropdown-item" href="#" onclick="updateIncidentStatus({{ inc.id }}, 'Resolved')">Set: Resolved</a></li>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li><h6 class="dropdown-header">Dispatch Team</h6></li>
+                                                    {% for team in available_teams %}
+                                                    <li><a class="dropdown-item" href="#" onclick="dispatchTeam({{ inc.id }}, {{ team.id }})">{{ team.name }} ({{ team.specialization }})</a></li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                        {% else %}
+                                            <span class="small text-muted"><i class="fa-solid fa-lock me-1"></i>No Control</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted p-4">No emergency incidents reported.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function updateIncidentStatus(incId, statusVal) {
+        fetch('/api/incidents/' + incId + '/status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: statusVal })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                location.reload();
+            } else {
+                alert(data.error || 'Failed to update status');
+            }
+        });
+    }
+function dispatchTeam(incId, teamIdVal) {
+    console.log("Dispatch clicked");
+    console.log("Incident ID:", incId);
+    console.log("Team ID:", teamIdVal);
+
+    fetch('/api/incidents/' + incId + '/dispatch', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            team_id: teamIdVal
+        })
+    })
+    .then(response => {
+        console.log("HTTP Status:", response.status);
+        console.log("HTTP OK:", response.ok);
+
+        return response.json().then(data => ({
+            status: response.status,
+            ok: response.ok,
+            data: data
+        }));
+    })
+    .then(result => {
+        console.log("Server Response:", result.data);
+
+        if (result.ok && result.data.message) {
+            alert(result.data.message);
+            location.reload();
+        } else {
+            alert("Dispatch failed: " + (result.data.error || "Unknown error"));
+        }
+    })
+    .catch(error => {
+        console.error("Dispatch Error:", error);
+        alert("Dispatch request failed. Check browser console.");
+    });
+}
+</script>
+{% endblock %}

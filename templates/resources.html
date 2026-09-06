@@ -1,0 +1,339 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Command Center Resource Allocation{% endblock %}
+
+{% block content %}
+<ul class="nav nav-tabs mb-4" id="resourceTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-bold" id="inventory-tab" data-bs-toggle="tab" data-bs-target="#inventory" type="button" role="tab" aria-controls="inventory" aria-selected="true"><i class="fa-solid fa-warehouse me-2"></i>Physical Supplies Stock</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold" id="teams-tab" data-bs-toggle="tab" data-bs-target="#teams" type="button" role="tab" aria-controls="teams" aria-selected="false"><i class="fa-solid fa-users-viewfinder me-2"></i>Rescue Teams Coordination</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold" id="shelters-tab" data-bs-toggle="tab" data-bs-target="#shelters" type="button" role="tab" aria-controls="shelters" aria-selected="false"><i class="fa-solid fa-tent me-2"></i>Relief Shelters</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold" id="routes-tab" data-bs-toggle="tab" data-bs-target="#routes" type="button" role="tab" aria-controls="routes" aria-selected="false"><i class="fa-solid fa-route me-2"></i>Evacuation routes</button>
+    </li>
+</ul>
+
+<div class="tab-content" id="resourceTabsContent">
+    <!-- Supplies Stock Tab -->
+    <div class="tab-pane fade show active" id="inventory" role="tabpanel" aria-labelledby="inventory-tab">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="card-title fw-bold m-0 text-dark">Central Relief Inventory Stock</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Supply Item Name</th>
+                                <th>Category</th>
+                                <th>Total Stock</th>
+                                <th>Allocated</th>
+                                <th>Available Stock</th>
+                                <th>Warehouse Location</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in resources %}
+                            <tr>
+                                <td><span class="fw-bold">{{ r.name }}</span></td>
+                                <td><span class="badge bg-secondary-subtle text-secondary-emphasis">{{ r.resource_type }}</span></td>
+                                <td>{{ r.total_qty }}</td>
+                                <td class="text-warning fw-semibold">{{ r.allocated_qty }}</td>
+                                <td class="text-success fw-bold">{{ r.available_qty }}</td>
+                                <td><small class="text-muted"><i class="fa-solid fa-building-circle-arrow-right me-1"></i>{{ r.location_name }}</small></td>
+                                <td>
+                                    {% if current_user.role == 'admin' %}
+                                    <button class="btn btn-outline-info btn-sm fw-bold" onclick="allocateSupplyModal({{ r.id }}, '{{ r.name }}', {{ r.available_qty }})"><i class="fa-solid fa-dolly me-1"></i>Allocate</button>
+                                    {% else %}
+                                    <span class="small text-muted"><i class="fa-solid fa-lock me-1"></i>Admin Only</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rescue Teams Tab -->
+    <div class="tab-pane fade" id="teams" role="tabpanel" aria-labelledby="teams-tab">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="card-title fw-bold m-0 text-dark">Rescue Teams & Specializations</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Team Name</th>
+                                <th>Specialization</th>
+                                <th>Size</th>
+                                <th>Coordinators Lat/Lng</th>
+                                <th>Emergency Contact</th>
+                                <th>Dispatched Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in teams %}
+                            <tr>
+                                <td><span class="fw-bold text-dark">{{ t.name }}</span></td>
+                                <td><span class="badge bg-primary-subtle text-primary-emphasis">{{ t.specialization }}</span></td>
+                                <td>{{ t.members_count }} Responders</td>
+                                <td><small class="text-secondary">{{ t.latitude|round(4) }}, {{ t.longitude|round(4) }}</small></td>
+                                <td><span class="text-secondary"><i class="fa-solid fa-phone me-1"></i>{{ t.contact_number }}</span></td>
+                                <td>
+                                    <span class="badge {% if t.status == 'Available' %}bg-success{% elif t.status == 'Dispatched' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                        {{ t.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Relief Shelters Tab -->
+    <div class="tab-pane fade" id="shelters" role="tabpanel" aria-labelledby="shelters-tab">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="card-title fw-bold m-0 text-dark">District Relief Shelter Occupancy & Supplies</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Shelter Camp</th>
+                                <th>District</th>
+                                <th>Occupancy Gauge</th>
+                                <th>Capacity Details</th>
+                                <th>Food Stock</th>
+                                <th>Water Stock</th>
+                                <th>Medics</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sh in shelters %}
+                            <tr>
+                                <td><span class="fw-bold">{{ sh.name }}</span></td>
+                                <td>{{ sh.location_name }}</td>
+                                <td style="width:250px;">
+                                    {% set pct = (sh.occupancy * 100 // sh.capacity) %}
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress w-70 me-2" style="height: 10px;">
+                                            <div class="progress-bar {% if pct > 85 %}bg-danger{% elif pct > 50 %}bg-warning{% else %}bg-success{% endif %}" role="progressbar" style="width: {{ pct }}%"></div>
+                                        </div>
+                                        <span class="small fw-bold text-dark">{{ pct }}%</span>
+                                    </div>
+                                </td>
+                                <td>{{ sh.occupancy }} / {{ sh.capacity }} Occupants</td>
+                                <td><span class="badge bg-secondary">{{ sh.food_stock_days }} Days</span></td>
+                                <td><span class="badge bg-secondary">{{ sh.water_stock_days }} Days</span></td>
+                                <td>
+                                    <span class="badge {% if sh.medical_stock_level == 'Good' %}bg-success-subtle text-success border border-success-subtle{% elif sh.medical_stock_level == 'Low' %}bg-warning-subtle text-warning border border-warning-subtle{% else %}bg-danger-subtle text-danger border border-danger-subtle{% endif %}">
+                                        {{ sh.medical_stock_level }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if current_user.role in ['admin', 'responder'] %}
+                                    <button class="btn btn-outline-secondary btn-sm fw-bold" onclick="updateShelterOccupancyModal({{ sh.id }}, '{{ sh.name }}', {{ sh.occupancy }}, {{ sh.capacity }}, {{ sh.food_stock_days }}, {{ sh.water_stock_days }})"><i class="fa-solid fa-pen me-1"></i>Update</button>
+                                    {% else %}
+                                    <span class="small text-muted"><i class="fa-solid fa-lock me-1"></i>Unauthorized</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Evacuation Routes Tab -->
+    <div class="tab-pane fade" id="routes" role="tabpanel" aria-labelledby="routes-tab">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="card-title fw-bold m-0 text-dark">Evacuation Corridor Safety</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Route ID & Description</th>
+                                <th>Start Point</th>
+                                <th>Destination Point</th>
+                                <th>Distance</th>
+                                <th>Safety Status</th>
+                                <th>Hazards Reported</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in routes %}
+                            <tr>
+                                <td><span class="fw-bold">{{ r.name }}</span></td>
+                                <td><small>{{ r.source_lat|round(4) }}, {{ r.source_lng|round(4) }}</small></td>
+                                <td><small>{{ r.dest_lat|round(4) }}, {{ r.dest_lng|round(4) }}</small></td>
+                                <td>{{ r.distance_km }} Km</td>
+                                <td>
+                                    <span class="badge {% if r.status == 'Safe' %}bg-success{% elif r.status == 'Congested' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                        {{ r.status }}
+                                    </span>
+                                </td>
+                                <td><small class="text-danger">{{ r.hazard_info or 'Clear' }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Supply Allocation Modal -->
+<div class="modal fade" id="allocateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="allocateModalTitle">Allocate supplies</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Stock Item Selected</label>
+                    <input type="text" class="form-control" id="alloc-item-name" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Quantity to Dispatch</label>
+                    <input type="number" class="form-control" id="alloc-qty" min="1" value="10">
+                    <div class="form-text" id="alloc-max-hint">Max available: --</div>
+                </div>
+                <input type="hidden" id="alloc-item-id">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-info btn-sm fw-bold" onclick="submitAllocation()"><i class="fa-solid fa-truck-ramp-box me-1"></i>Approve Cargo Allocation</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Shelter Occupancy Update Modal -->
+<div class="modal fade" id="shelterModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="shelterModalTitle">Update Camp Logs</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Current Occupancy</label>
+                    <input type="number" class="form-control" id="sh-occupancy" min="0">
+                    <div class="form-text" id="sh-capacity-hint">Max capacity: --</div>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label small fw-bold">Food Stocks (Days)</label>
+                        <input type="number" class="form-control" id="sh-food" min="0">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-bold">Water Stocks (Days)</label>
+                        <input type="number" class="form-control" id="sh-water" min="0">
+                    </div>
+                </div>
+                <input type="hidden" id="sh-id">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm fw-bold" onclick="submitShelterUpdate()"><i class="fa-solid fa-floppy-disk me-1"></i>Commit Updates</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const allocModal = new bootstrap.Modal(document.getElementById('allocateModal'));
+    const shModal = new bootstrap.Modal(document.getElementById('shelterModal'));
+
+    function allocateSupplyModal(id, name, maxVal) {
+        document.getElementById('alloc-item-id').value = id;
+        document.getElementById('alloc-item-name').value = name;
+        document.getElementById('alloc-qty').max = maxVal;
+        document.getElementById('alloc-max-hint').innerText = "Max available: " + maxVal;
+        allocModal.show();
+    }
+
+    function submitAllocation() {
+        const id = document.getElementById('alloc-item-id').value;
+        const qtyVal = document.getElementById('alloc-qty').value;
+
+        fetch('/api/resources/allocate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ resource_id: id, qty: qtyVal })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                location.reload();
+            } else {
+                alert(data.error || 'Allocation failed');
+            }
+        });
+    }
+
+    function updateShelterOccupancyModal(id, name, occ, cap, food, water) {
+        document.getElementById('sh-id').value = id;
+        document.getElementById('sh-occupancy').value = occ;
+        document.getElementById('sh-occupancy').max = cap;
+        document.getElementById('sh-capacity-hint').innerText = "Max capacity: " + cap;
+        document.getElementById('sh-food').value = food;
+        document.getElementById('sh-water').value = water;
+        shModal.show();
+    }
+
+    function submitShelterUpdate() {
+        const id = document.getElementById('sh-id').value;
+        const occVal = document.getElementById('sh-occupancy').value;
+        const foodVal = document.getElementById('sh-food').value;
+        const waterVal = document.getElementById('sh-water').value;
+
+        fetch('/api/shelters/' + id + '/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                occupancy: occVal,
+                food_stock_days: foodVal,
+                water_stock_days: waterVal
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                location.reload();
+            } else {
+                alert(data.error || 'Update failed');
+            }
+        });
+    }
+</script>
+{% endblock %}
