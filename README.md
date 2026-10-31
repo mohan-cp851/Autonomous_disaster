@@ -1032,43 +1032,43 @@ Future versions can include:
 
 ## 📊 Emergency Dashboard
 
-<img src="./docs/dashboard.jpeg" alt="ADRACS Emergency Dashboard">
+<img src="./docs/present/dashboard.jpeg" alt="ADRACS Emergency Dashboard">
 
 ## 🗺️ Interactive Disaster Map
 
-![ADRACS Disaster Map](./docs/disaster-map.jpeg)
+![ADRACS Disaster Map](./docs/present/disaster-map.jpeg)
 
 ## 🚨 Incident & Dispatch Manager
 
-![ADRACS Incident & Dispatch Manager](./docs/incident-dispatch.jpeg)
+![ADRACS Incident & Dispatch Manager](./docs/present/incident-dispatch.jpeg)
 
 ## 🤖 AI Risk & Satellite Analysis
 
-![ADRACS AI Risk & Satellite Analysis](./docs/ai-risk-satellite.jpeg)
+![ADRACS AI Risk & Satellite Analysis](./docs/present/ai-risk-satellite.jpeg)
 
 ## 📡 IoT Sensor Monitoring
 
-![ADRACS IoT Sensor Monitoring](./docs/iot-sensors.jpeg)
+![ADRACS IoT Sensor Monitoring](./docs/present/iot-sensors.jpeg)
 
 ## 🚑 Rescue Team Management
 
-![ADRACS Rescue Team Management](./docs/rescue-teams.jpeg)
+![ADRACS Rescue Team Management](./docs/present/rescue-teams.jpeg)
 
 ## 📦 Physical Resource Stock
 
-![ADRACS Physical Resource Stock](./docs/resource-stock.jpeg)
+![ADRACS Physical Resource Stock](./docs/present/resource-stock.jpeg)
 
 ## 🏠 Relief Shelter Management
 
-![ADRACS Relief Shelter Management](./docs/relief-shelters.jpeg)
+![ADRACS Relief Shelter Management](./docs/present/relief-shelters.jpeg)
 
 ## 📚 Project Resources
 
-![ADRACS Project Resources](./docs/project-resources.jpeg)
+![ADRACS Project Resources](./docs/present/project-resources.jpeg)
 
 ## 🔐 User Registration & Role-Based Access
 
-![ADRACS User Registration](./docs/register.jpeg)
+![ADRACS User Registration](./docs/present/register.jpeg)
 
 
 # ⚠️ Limitations
