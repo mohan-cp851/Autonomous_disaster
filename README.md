@@ -4,7 +4,7 @@
 
 ADRACS is an intelligent disaster-management and emergency coordination platform designed to assist responders during critical situations.
 
-The system combines **IoT telemetry simulation, AI-based disaster risk prediction, computer vision, incident management, rescue-team coordination, emergency resource management, shelter monitoring, evacuation route analysis, and an AI Emergency Response Copilot** into a centralized command platform.
+The system combines **IoT telemetry simulation, AI-based disaster risk prediction, computer vision, incident evidence review, explainable prioritization, constrained team/resource planning, shelter monitoring, and graph-based route replanning** in a centralized command platform.
 
 ---
 
@@ -76,6 +76,22 @@ Supported incident states:
 ```text
 Active → Under Control → Resolved
 ```
+
+### 5. 🧭 Evidence-Aware Operations Center
+
+The Operations Center at `/command-center` adds:
+
+* Source-tagged incident evidence with freshness, duplicate suggestions, and conflicting-claim review.
+* A deterministic, explainable priority score; the evidence score is a heuristic, not a calibrated probability.
+* Backend-generated team assignments with capability, team-capacity, and road-graph constraints.
+* Inventory need/shortage estimates and an unserved-incident list.
+* Proposed plans, comparison history, and administrator approval before consequential actions.
+* Persisted road-condition events that rerun route and team allocation recommendations.
+* Shelter occupancy and accessibility records, with unknown information identified explicitly.
+* A repeatable, synthetic Pune demonstration scenario.
+* A repeatable, synthetic Chennai flood/cyclone scenario with Adyar, Velachery, Ennore, and Perungudi operations data.
+
+The demonstration road network is a stored graph, not a live road feed. The map shows its recorded edges; graph routes include an explicit warning that routing output does not certify road safety. Where no graph route exists, the interface labels the route unknown rather than presenting a straight-line estimate as a safe route.
 
 ---
 
@@ -191,29 +207,6 @@ Shelter records include:
 
 ---
 
-### 9. 💬 AI Emergency Response Copilot
-
-ADRACS includes an emergency-response AI Copilot.
-
-The Copilot can use:
-
-* A local Ollama instance when available
-* An offline fallback retrieval mechanism based on emergency guidelines
-
-The Copilot is intended to provide decision-support information for questions such as:
-
-```text
-What precautions should responders take during a flood?
-
-Which emergency resources should be prioritized?
-
-What should be considered before evacuation?
-
-What actions should be taken when water levels rise rapidly?
-```
-
-> The Copilot is a decision-support feature and should not replace instructions from authorized disaster-management authorities.
-
 ---
 
 ### 10. 📁 Project Resources Directory
@@ -269,7 +262,7 @@ ADRACS is designed to demonstrate an **end-to-end disaster-response workflow**, 
               Evacuation Route Analysis
                           │
                           ▼
-                 AI Copilot Assistance
+             Evidence & Priority Review
                           │
                           ▼
                    Field Response
@@ -435,19 +428,9 @@ Possible route conditions:
 
 ---
 
-### Step 10 — AI Copilot
+### Step 10 — Evidence Review and Replanning
 
-Ask the AI Emergency Response Copilot for operational guidance.
-
-Example:
-
-```text
-"What precautions should responders take during a flood?"
-
-"What resources should be prioritized?"
-
-"What should be considered before evacuation?"
-```
+Open Operations Center, inspect the simulated evidence and priority rationale, generate a proposed plan, then mark the simulated Riverside bridge inaccessible to compare the revised routes and assignments. Approval records a human decision only; it does not dispatch a team.
 
 ---
 
@@ -499,12 +482,13 @@ Route
 | 30 sec | Resources         | Allocate emergency resources                |
 | 30 sec | Shelters          | Check shelter capacity                      |
 | 30 sec | Route Analyzer    | Evaluate evacuation route                   |
-| 30 sec | AI Copilot        | Ask emergency-response question             |
+| 40 sec | Operations Center | Review evidence and priorities               |
+| 40 sec | Replanning         | Close a simulated road and compare plans     |
 | 20 sec | Dashboard         | Verify final operational state              |
 
 ### ⭐ One-Line Demo Story
 
-> **Sensor detects a flood risk → ADRACS processes the emergency → AI assesses the risk → an incident is managed → a rescue team is dispatched → resources are allocated → a suitable shelter is identified → an evacuation route is evaluated → AI Copilot provides decision support → and the incident is resolved.**
+> **A report is reviewed → incidents are prioritized → a feasible response plan is proposed → route conditions change → affected recommendations are recalculated → an authorized administrator reviews the new plan.**
 
 ---
 
@@ -620,7 +604,7 @@ Incident Resolved
 | Image Processing     | HSV / Canny                         |
 | Routing              | OSRM                                |
 | Map Data             | OpenStreetMap                       |
-| AI Copilot           | Ollama + Offline Retrieval Fallback |
+| Operations planning | SciPy linear assignment + stored-road-graph Dijkstra |
 | Testing              | pytest                              |
 | Development          | Windows 11 / PowerShell             |
 
@@ -808,6 +792,47 @@ The test suite can cover areas including:
 
 ---
 
+# 🧭 Operations Center API & Demonstration
+
+The authenticated Operations Center is available at `http://localhost:5000/command-center`.
+Database changes use SQLAlchemy `create_all`; on SQLite startup, the app safely adds the new
+`incidents.affected_count` and `incidents.verification_status` columns when upgrading an existing database.
+
+Key endpoints:
+
+| Method | Endpoint | Access |
+|---|---|---|
+| `GET` | `/api/command/overview` | Authenticated users |
+| `POST` | `/api/command/incidents` | Admin or responder |
+| `GET` | `/api/command/incidents/<id>/assessment` | Authenticated users |
+| `POST` | `/api/command/incidents/<id>/evidence` | Admin or responder |
+| `POST` | `/api/command/evidence/<id>/review` | Admin or responder |
+| `POST` | `/api/command/plans/optimize` | Admin or responder |
+| `GET` | `/api/command/plans/<id>/comparison` | Authenticated users |
+| `POST` | `/api/command/plans/<id>/decision` | Admin only |
+| `POST` | `/api/command/roads/<id>/status` | Admin or responder; requires unique `event_id` |
+| `GET` | `/api/command/shelters/recommendations?latitude=…&longitude=…&people=…` | Authenticated users |
+| `POST` | `/api/command/demo` | Admin only |
+
+JSON writes return a structured `{ "success": false, "error": "..." }` payload on validation or authorization errors.
+Self-registered accounts are public/read-only; operational roles must be granted by a trusted administrator.
+
+To run the repeatable road-disruption demonstration:
+
+1. Sign in as the seeded admin and open Operations Center.
+2. Select **Pune simulation** or **Chennai simulation**, then **Load scenario**. This inserts labeled synthetic data and does not delete existing records.
+3. Generate an allocation plan, inspect evidence conflicts and priorities, and approve or reject the proposal.
+4. Mark a scenario road such as **[SIM] Riverside bridge** or **[SIM-CHENNAI] Adyar bridge approach** inaccessible. The event is persisted and uses the stored road graph to recalculate a proposal and compare it with the previous plan.
+5. Review the revised proposal. Approval records a decision; it does not dispatch a real team.
+
+Evidence and priority values are configurable deterministic heuristics, not calibrated probabilities.
+Assignments use SciPy's linear assignment solver with hard availability, specialization, team-capacity,
+and stored-road-path constraints. Routes use Dijkstra over stored road segments; the demonstration graph
+is synthetic. No live incident, road-closure, weather, or shelter-capacity feed is configured. Map tiles
+and the legacy route analyzer may use public OpenStreetMap/OSRM endpoints.
+
+---
+
 # 🧠 AI Components
 
 ADRACS combines multiple AI/automation approaches.
@@ -847,22 +872,6 @@ Highlighted Overlay
 ```
 
 ---
-
-## AI Emergency Copilot
-
-```text
-User Question
-      ↓
-Ollama Available?
-   ↙         ↘
- YES          NO
-  ↓            ↓
-Local LLM    Offline Retrieval
-  ↓            ↓
-  └──────┬─────┘
-         ↓
-Emergency Guidance
-```
 
 ---
 
@@ -1016,7 +1025,7 @@ Future versions can include:
 * Mobile application
 * Cloud deployment
 * Real-time streaming architecture
-* Advanced AI Emergency Copilot
+* Operational evidence verification and explainable allocation planning
 
 ---
 
@@ -1058,10 +1067,6 @@ Future versions can include:
 
 ![ADRACS Project Resources](./docs/project-resources.jpeg)
 
-## 💬 AI Emergency Response Copilot
-
-![ADRACS AI Emergency Response Copilot](./docs/ai-copilot.jpeg)
-
 ## 🔐 User Registration & Role-Based Access
 
 ![ADRACS User Registration](./docs/register.jpeg)
@@ -1077,7 +1082,9 @@ Current limitations may include:
 * AI predictions depend on the quality and representativeness of training data.
 * Computer-vision results may require human verification.
 * Public routing data may not reflect rapidly changing disaster conditions.
-* Offline AI guidance is limited by the available emergency-guideline knowledge base.
+* Evidence confidence and priority scores are deterministic heuristics; they are not statistically calibrated.
+* The operations road graph and scenario are synthetic unless coordinators enter verified road information.
+* Allocation proposals use configured team specializations, estimated team capacity, and current inventory. They are decision support, not dispatch instructions.
 * Real-world deployment requires extensive field validation and reliability testing.
 
 ---
@@ -1193,7 +1200,7 @@ If the project is released publicly, add an appropriate open-source license such
 │  🛰️ Computer Vision         🗺️ Disaster Mapping         │
 │  🚨 Incident Management     🚑 Team Dispatch             │
 │  📦 Resource Management     🏠 Shelter Management        │
-│  🛣️ Route Analysis          💬 AI Copilot               │
+│  🛣️ Route Analysis          🧭 Operations Center        │
 │                                                          │
 ├──────────────────────────────────────────────────────────┤
 │                                                          │

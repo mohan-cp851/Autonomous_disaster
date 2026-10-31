@@ -8,3 +8,16 @@ from models.shelter import Shelter
 from models.route import EvacuationRoute
 from models.alert import Alert
 from models.historical import HistoricalDisaster
+from models.operations import (
+    AllocationAssignment,
+    AllocationNeed,
+    AllocationPlan,
+    AllocationSupply,
+    AuditRecord,
+    EvidenceReport,
+    PlanApproval,
+    PriorityAssessmentRecord,
+    ReplanEvent,
+    RoadSegment,
+    ShelterCondition,
+)

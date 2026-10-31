@@ -37,6 +37,22 @@
                         </select>
                     </div>
                     <div class="mb-3">
+                        <label for="affected_count" class="form-label fw-semibold text-secondary">People Potentially Affected</label>
+                        <input type="number" class="form-control form-control-sm" id="affected_count" name="affected_count" min="0" max="1000000" value="0">
+                        <div class="form-text">Use 0 when the count is unknown.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="source_type" class="form-label fw-semibold text-secondary">Report Source</label>
+                        <select class="form-select form-select-sm" id="source_type" name="source_type">
+                            <option value="Citizen">Citizen report</option>
+                            <option value="Field Team">Field team</option>
+                            <option value="Government">Government / official agency</option>
+                            <option value="Sensor">Sensor observation</option>
+                            <option value="Simulated">Simulated data</option>
+                            <option value="Unknown">Unknown source</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
                         <label for="location_name" class="form-label fw-semibold text-secondary">Incident Location</label>
                         <select class="form-select form-select-sm" id="location_name" name="location_name">
                             <option value="Pune">Pune District</option>

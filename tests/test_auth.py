@@ -53,4 +53,6 @@ def test_registration(client, app):
     assert b"Registration successful" in response.data
     
     with app.app_context():
-        assert User.query.filter_by(username="new_officer").first() is not None
+        registered = User.query.filter_by(username="new_officer").first()
+        assert registered is not None
+        assert registered.role == "public"

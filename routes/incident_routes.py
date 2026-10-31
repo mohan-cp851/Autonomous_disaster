@@ -1,8 +1,10 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
 from flask_login import login_required, current_user
 from models.incident import Incident
+from models.operations import EvidenceReport
 from models.team import RescueTeam
 from utils.database import db
+from utils.operations import audit, record_priority_assessment
 
 incident_bp = Blueprint('incident', __name__)
 
@@ -14,6 +16,19 @@ def list_incidents():
         disaster_type = request.form.get('disaster_type')
         severity = request.form.get('severity')
         location_name = request.form.get('location_name')
+        source_type = request.form.get('source_type', 'Citizen')
+        try:
+            affected_count = int(request.form.get('affected_count', '0'))
+        except ValueError:
+            flash('Potentially affected people must be a whole number.', 'danger')
+            return redirect(url_for('incident.list_incidents'))
+
+        if affected_count < 0 or affected_count > 1_000_000:
+            flash('Potentially affected people must be between 0 and 1,000,000.', 'danger')
+            return redirect(url_for('incident.list_incidents'))
+        if source_type not in {'Government', 'Field Team', 'Sensor', 'Citizen', 'Simulated', 'Unknown'}:
+            flash('Select a valid report source.', 'danger')
+            return redirect(url_for('incident.list_incidents'))
         
         # Geocode fallbacks for Pune, Mumbai, etc.
         coords = {
@@ -35,9 +50,22 @@ def list_incidents():
             latitude=lat,
             longitude=lng,
             description=description,
-            reported_by=current_user.username
+            reported_by=current_user.username,
+            affected_count=affected_count,
+            verification_status='Pending Review'
         )
         db.session.add(new_inc)
+        db.session.flush()
+        db.session.add(EvidenceReport(
+            incident=new_inc,
+            source_type=source_type,
+            description=description or title,
+            submitted_by_id=current_user.id,
+        ))
+        record_priority_assessment(new_inc, 'Incident report created', current_user.id)
+        audit('incident.created', 'incident', new_inc.id, current_user.id, {
+            'source_type': source_type,
+        })
         db.session.commit()
         flash('Incident reported successfully!', 'success')
         return redirect(url_for('incident.list_incidents'))

@@ -1,0 +1,42 @@
+#command-map {
+    height: 410px;
+    background: #e9eef2;
+}
+
+.command-search {
+    max-width: 220px;
+}
+
+.command-incident-row {
+    cursor: pointer;
+}
+
+.command-incident-row.is-selected {
+    background: #e9f5ff;
+}
+
+.command-evidence-item {
+    border-left: 3px solid #adb5bd;
+}
+
+.command-evidence-item.is-stale {
+    border-left-color: #dc3545;
+}
+
+.command-plan-assignment {
+    border-bottom: 1px solid #e9ecef;
+}
+
+.command-plan-assignment:last-child {
+    border-bottom: 0;
+}
+
+@media (max-width: 767.98px) {
+    #command-map {
+        height: 320px;
+    }
+
+    .command-search {
+        max-width: 100%;
+    }
+}

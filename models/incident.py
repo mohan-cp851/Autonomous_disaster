@@ -15,6 +15,8 @@ class Incident(db.Model):
     status = db.Column(db.String(30), default='Active', nullable=False) # Active, Under Control, Resolved
     reported_by = db.Column(db.String(100), default='System', nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    affected_count = db.Column(db.Integer, nullable=False, default=0)
+    verification_status = db.Column(db.String(20), nullable=False, default='Unverified')
 
     # Dispatched rescue team relation
     dispatched_team_id = db.Column(db.Integer, db.ForeignKey('rescue_teams.id'), nullable=True)
@@ -32,5 +34,7 @@ class Incident(db.Model):
             'status': self.status,
             'reported_by': self.reported_by,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-            'dispatched_team_id': self.dispatched_team_id
+            'dispatched_team_id': self.dispatched_team_id,
+            'affected_count': self.affected_count,
+            'verification_status': self.verification_status
         }

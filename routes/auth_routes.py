@@ -35,7 +35,8 @@ def register():
         username = request.form.get('username')
         email = request.form.get('email')
         password = request.form.get('password')
-        role = request.form.get('role', 'public')
+        # Public self-registration cannot grant operational roles.
+        role = 'public'
         
         # Check if email/username exists
         if User.query.filter_by(email=email).first():

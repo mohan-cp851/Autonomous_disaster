@@ -41,6 +41,11 @@
                         <i class="fa-solid fa-chart-line me-2"></i>Dashboard
                     </a>
                 </li>
+                <li class="{% if request.path == '/command-center' %}active{% endif %} mb-2">
+                    <a href="{{ url_for('command.index') }}" class="text-white text-decoration-none d-block py-2 px-3 rounded sidebar-link">
+                        <i class="fa-solid fa-tower-broadcast me-2"></i>Operations Center
+                    </a>
+                </li>
                 <li class="{% if request.path == '/map' %}active{% endif %} mb-2">
                     <a href="{{ url_for('map.index') }}" class="text-white text-decoration-none d-block py-2 px-3 rounded sidebar-link">
                         <i class="fa-solid fa-map-location-dot me-2"></i>Disaster Map
@@ -64,11 +69,6 @@
                 <li class="{% if request.path == '/resources' %}active{% endif %} mb-2">
                     <a href="{{ url_for('resources.index') }}" class="text-white text-decoration-none d-block py-2 px-3 rounded sidebar-link">
                         <i class="fa-solid fa-truck-ramp-box me-2"></i>Resources & Shelters
-                    </a>
-                </li>
-                <li class="{% if request.path == '/copilot' %}active{% endif %} mb-2">
-                    <a href="{{ url_for('copilot.index') }}" class="text-white text-decoration-none d-block py-2 px-3 rounded sidebar-link">
-                        <i class="fa-solid fa-robot me-2"></i>AI Copilot
                     </a>
                 </li>
                 <li class="{% if request.path == '/resources-links' %}active{% endif %} mb-2">
@@ -131,5 +131,4 @@
     {% block scripts %}{% endblock %}
 </body>
 </html>
-
 

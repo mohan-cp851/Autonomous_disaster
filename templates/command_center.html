@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Disaster Operations Center{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/command_center.css') }}">
+{% endblock %}
+
+{% block content %}
+<div id="command-center" data-can-operate="{{ 'true' if can_operate else 'false' }}" data-is-admin="{{ 'true' if current_user.role == 'admin' else 'false' }}">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <h2 class="h4 fw-bold mb-1">Verify · Prioritize · Allocate · Route · Replan</h2>
+            <p class="text-muted mb-0">Decision support only. Plans remain proposals until an administrator approves them; no services are dispatched automatically.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            {% if can_operate %}
+            <button type="button" class="btn btn-outline-primary" id="optimize-plan">
+                <i class="fa-solid fa-diagram-project me-1"></i>Generate allocation plan
+            </button>
+            {% endif %}
+            {% if current_user.role == 'admin' %}
+            <label class="visually-hidden" for="demo-scenario">Synthetic scenario city</label>
+            <select class="form-select" id="demo-scenario" aria-label="Synthetic scenario city">
+                <option value="pune">Pune simulation</option>
+                <option value="chennai">Chennai simulation</option>
+            </select>
+            <button type="button" class="btn btn-outline-secondary" id="initialize-demo">
+                <i class="fa-solid fa-flask me-1"></i>Load scenario
+            </button>
+            {% endif %}
+            <button type="button" class="btn btn-light border" id="refresh-command-center" aria-label="Refresh command center">
+                <i class="fa-solid fa-rotate"></i>
+            </button>
+        </div>
+    </div>
+
+    <div id="command-message" class="alert d-none" role="status" aria-live="polite"></div>
+    <div id="command-loading" class="text-center text-muted py-5">
+        <span class="spinner-border spinner-border-sm me-2" role="status"></span>Loading operational records…
+    </div>
+
+    <div id="command-data" class="d-none">
+        <div class="row g-3 mb-4" id="summary-cards"></div>
+
+        <div class="row g-4 mb-4">
+            <section class="col-xl-7" aria-labelledby="incidents-heading">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <h3 class="h6 fw-bold mb-0" id="incidents-heading">Priority queue</h3>
+                        <input type="search" class="form-control form-control-sm command-search" id="incident-search" placeholder="Search incidents" aria-label="Search incidents">
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr><th>Incident</th><th>Priority</th><th>Evidence</th><th>People affected</th></tr>
+                            </thead>
+                            <tbody id="incident-rows"></tbody>
+                        </table>
+                    </div>
+                    <div class="card-body text-muted small d-none" id="incident-empty">No active incidents are recorded.</div>
+                </div>
+            </section>
+            <section class="col-xl-5" aria-labelledby="evidence-heading">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white">
+                        <h3 class="h6 fw-bold mb-0" id="evidence-heading">Evidence review</h3>
+                        <div class="small text-muted mt-1" id="selected-incident-label">Select an incident to inspect its evidence.</div>
+                    </div>
+                    <div class="card-body" id="evidence-panel">
+                        <div class="text-muted small">Evidence confidence is a rule-based score, not a calibrated probability.</div>
+                    </div>
+                    {% if can_operate %}
+                    <div class="card-footer bg-white">
+                        <form id="evidence-form" class="d-none">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <label class="form-label small" for="evidence-source">Source category</label>
+                                    <select class="form-select form-select-sm" id="evidence-source">
+                                        <option>Citizen</option><option>Field Team</option><option>Government</option><option>Sensor</option><option>Simulated</option><option>Unknown</option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small" for="evidence-reference">Source reference</label>
+                                    <input class="form-control form-control-sm" id="evidence-reference" maxlength="120">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small" for="evidence-claim-type">Claim type (optional)</label>
+                                    <input class="form-control form-control-sm" id="evidence-claim-type" maxlength="40" placeholder="road_access">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small" for="evidence-claim-value">Claim value (optional)</label>
+                                    <input class="form-control form-control-sm" id="evidence-claim-value" maxlength="120" placeholder="Open / Closed">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small" for="evidence-description">Observation</label>
+                                    <textarea class="form-control form-control-sm" id="evidence-description" rows="2" maxlength="5000" required></textarea>
+                                </div>
+                                <div class="col-12 text-end">
+                                    <button class="btn btn-sm btn-primary" type="submit">Submit evidence</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+        </div>
+
+        {% if can_operate %}
+        <section class="card border-0 shadow-sm mb-4" aria-labelledby="report-heading">
+            <div class="card-header bg-white">
+                <h3 class="h6 fw-bold mb-0" id="report-heading">Submit an incident report</h3>
+            </div>
+            <div class="card-body">
+                <form id="incident-form" class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label" for="incident-title">Title</label>
+                        <input class="form-control" id="incident-title" maxlength="150" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label" for="incident-type">Category</label>
+                        <select class="form-select" id="incident-type">
+                            <option value="flood">Flood</option><option value="earthquake">Earthquake</option><option value="fire">Fire</option><option value="cyclone">Cyclone</option><option value="landslide">Landslide</option><option value="tsunami">Tsunami</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label" for="incident-severity">Severity</label>
+                        <select class="form-select" id="incident-severity">
+                            <option>Low</option><option>Medium</option><option>High</option><option>Critical</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label" for="incident-source">Source</label>
+                        <select class="form-select" id="incident-source">
+                            <option>Citizen</option><option>Field Team</option><option>Government</option><option>Sensor</option><option>Simulated</option><option>Unknown</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label" for="incident-affected">People affected</label>
+                        <input class="form-control" id="incident-affected" type="number" min="0" max="1000000" value="0">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label" for="incident-latitude">Latitude</label>
+                        <input class="form-control" id="incident-latitude" type="number" min="-90" max="90" step="any" value="18.5204" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label" for="incident-longitude">Longitude</label>
+                        <input class="form-control" id="incident-longitude" type="number" min="-180" max="180" step="any" value="73.8567" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="incident-location">Location name</label>
+                        <input class="form-control" id="incident-location" maxlength="150" value="Pune">
+                    </div>
+                    <div class="col-md-10">
+                        <label class="form-label" for="incident-description">Description</label>
+                        <textarea class="form-control" id="incident-description" rows="2" maxlength="5000" required></textarea>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button class="btn btn-danger w-100" type="submit">Record report</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+        {% endif %}
+
+        <div class="row g-4 mb-4">
+            <section class="col-xl-7" aria-labelledby="map-heading">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h3 class="h6 fw-bold mb-0" id="map-heading">Routes, incidents, roads & shelters</h3>
+                        <span class="badge text-bg-warning">Road status is not a safety certification</span>
+                    </div>
+                    <div class="card-body p-0"><div id="command-map" role="img" aria-label="Operational map"></div></div>
+                </div>
+            </section>
+            <section class="col-xl-5" aria-labelledby="plan-heading">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h3 class="h6 fw-bold mb-0" id="plan-heading">Allocation plan & review</h3>
+                        <span id="plan-status" class="badge text-bg-secondary">No plan</span>
+                    </div>
+                    <div class="card-body" id="plan-panel">
+                        <p class="text-muted small mb-0">Generate a plan to view team matches, resource shortages, route estimates, and unserved incidents.</p>
+                    </div>
+                    <div class="card-footer bg-white d-none" id="plan-actions"></div>
+                </div>
+            </section>
+        </div>
+
+        <div class="row g-4">
+            <section class="col-lg-7" aria-labelledby="roads-heading">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h3 class="h6 fw-bold mb-0" id="roads-heading">Road-condition events</h3>
+                        <div class="small text-muted">Updates are recorded with their source and may generate a new proposed plan.</div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                            <thead class="table-light"><tr><th>Road segment</th><th>Status</th><th>Source / updated</th><th></th></tr></thead>
+                            <tbody id="road-rows"></tbody>
+                        </table>
+                    </div>
+                    <div class="card-body text-muted small d-none" id="roads-empty">No road network records are available. Load the simulated scenario or add road data.</div>
+                </div>
+            </section>
+            <section class="col-lg-5" aria-labelledby="shelters-heading">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white"><h3 class="h6 fw-bold mb-0" id="shelters-heading">Shelter capacity & status</h3></div>
+                    <div class="card-body" id="shelter-list"></div>
+                </div>
+            </section>
+        </div>
+
+        <div class="row g-4 mt-1">
+            <section class="col-lg-6" aria-labelledby="events-heading">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white"><h3 class="h6 fw-bold mb-0" id="events-heading">Replanning history</h3></div>
+                    <div class="list-group list-group-flush" id="event-list"></div>
+                </div>
+            </section>
+            <section class="col-lg-6" aria-labelledby="audit-heading">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white"><h3 class="h6 fw-bold mb-0" id="audit-heading">Decision audit</h3></div>
+                    <div class="list-group list-group-flush" id="audit-list"></div>
+                </div>
+            </section>
+        </div>
+        <p class="text-muted small mt-3 mb-0">Operational data refreshes when this page loads or when you select Refresh. The simulation is synthetic; it is not connected to emergency services, live road feeds, or verified government alerts.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/command_center.js') }}"></script>
+{% endblock %}

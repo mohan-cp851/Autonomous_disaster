@@ -60,13 +60,3 @@ def test_risk_predictor_critical(authenticated_client):
     res_json = response.get_json()
     assert res_json['highest_risk_type'] == 'Flood'
     assert res_json['risk_level'] in ['High', 'Critical']
-
-def test_copilot_chatbot_fallback(authenticated_client):
-    # Test fallback guidline matcher
-    response = authenticated_client.post('/api/copilot/chat', json={
-        'query': 'what should I do in a flood threat?'
-    })
-    assert response.status_code == 200
-    res_json = response.get_json()
-    assert 'response' in res_json
-    assert 'FLOOD' in res_json['response']

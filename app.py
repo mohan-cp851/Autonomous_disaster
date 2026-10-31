@@ -34,7 +34,7 @@ def create_app(config_name='dev'):
     from routes.ai_routes import ai_bp
     from routes.iot_routes import iot_bp
     from routes.resource_routes import resource_bp
-    from routes.copilot_routes import copilot_bp
+    from routes.command_routes import command_bp
     from routes.resources_links import resources_links_bp
 
     app.register_blueprint(auth_bp)
@@ -44,7 +44,7 @@ def create_app(config_name='dev'):
     app.register_blueprint(ai_bp)
     app.register_blueprint(iot_bp)
     app.register_blueprint(resource_bp)
-    app.register_blueprint(copilot_bp)
+    app.register_blueprint(command_bp)
     app.register_blueprint(resources_links_bp)
 
     # Serving satellite files
@@ -55,6 +55,8 @@ def create_app(config_name='dev'):
     with app.app_context():
         # Make sure DB schema is created if not exists
         db.create_all()
+        from utils.schema import upgrade_existing_schema
+        upgrade_existing_schema()
 
     # Start the IoT Sensor simulator background task
     start_simulator(app)
