@@ -4,7 +4,7 @@ from models.incident import Incident
 from models.operations import EvidenceReport
 from models.team import RescueTeam
 from utils.database import db
-from utils.operations import audit, record_priority_assessment
+from utils.operations import audit
 
 incident_bp = Blueprint('incident', __name__)
 
@@ -62,7 +62,6 @@ def list_incidents():
             description=description or title,
             submitted_by_id=current_user.id,
         ))
-        record_priority_assessment(new_inc, 'Incident report created', current_user.id)
         audit('incident.created', 'incident', new_inc.id, current_user.id, {
             'source_type': source_type,
         })

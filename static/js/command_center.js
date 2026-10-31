@@ -129,13 +129,6 @@
             ? `<div class="small text-warning mb-2">Potential duplicate evidence report groups: ${
                 evidence.potential_duplicate_reports.map((group) => group.report_ids.join(' / ')).join(', ')
             }. Review before treating them as independent.</div>` : '';
-        const priorityHistory = incident.priority_history?.length ? `
-            <details class="small mt-3">
-                <summary class="fw-semibold">Previous priority assessments (${incident.priority_history.length})</summary>
-                <ul class="mt-2 mb-0">${incident.priority_history.map((item) =>
-                    `<li>${escapeHtml(item.priority)} · ${escapeHtml(item.score)}/100 · ${escapeHtml(item.trigger)} · ${formatDate(item.created_at)}</li>`
-                ).join('')}</ul>
-            </details>` : '';
         evidencePanel.innerHTML = `
             <div class="mb-2">${badge(`${evidence.confidence_score}% evidence confidence`, 'primary')}
                 ${badge(incident.verification_status, incident.verification_status === 'Verified' ? 'success' : 'warning')}
@@ -146,7 +139,7 @@
             ${conflicts}${duplicateReports}
             <div class="small fw-semibold mb-2">Evidence timeline</div>
             ${evidenceRows}
-            ${priorityHistory}
+            ${assessment.evidence.potential_duplicate_reports.length ? '' : ''}
         `;
         const evidenceForm = document.getElementById('evidence-form');
         if (evidenceForm) evidenceForm.classList.remove('d-none');
@@ -531,12 +524,10 @@
 
     const demoButton = document.getElementById('initialize-demo');
     if (demoButton) demoButton.addEventListener('click', async () => {
-        const scenario = document.getElementById('demo-scenario').value;
-        const city = scenario === 'chennai' ? 'Chennai' : 'Pune';
-        if (!window.confirm(`Load the deterministic simulated ${city} scenario? It will add labeled demonstration records and will not delete existing data.`)) return;
+        if (!window.confirm('Load the deterministic simulated Pune scenario? It will add labeled demonstration records and will not delete existing data.')) return;
         try {
             const result = await requestJson('/api/command/demo', {
-                method: 'POST', body: JSON.stringify({ scenario })
+                method: 'POST', body: JSON.stringify({})
             });
             showMessage(result.message || 'Simulated scenario is ready.');
             await loadOverview();

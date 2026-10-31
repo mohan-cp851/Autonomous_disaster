@@ -28,6 +28,7 @@ def client(app):
 
 def test_login_success(client):
     response = client.post('/login', data={
+        'account_type': 'volunteer',
         'email': 'test@disaster.gov.in',
         'password': 'test1234'
     }, follow_redirects=True)
@@ -36,11 +37,30 @@ def test_login_success(client):
 
 def test_login_failure(client):
     response = client.post('/login', data={
+        'account_type': 'volunteer',
         'email': 'test@disaster.gov.in',
         'password': 'wrongpassword'
     }, follow_redirects=True)
     assert response.status_code == 200
-    assert b"Invalid email or password" in response.data
+    assert b"Invalid email, password, or account type" in response.data
+
+
+def test_login_rejects_mismatched_account_type(client):
+    response = client.post('/login', data={
+        'account_type': 'ndma',
+        'email': 'test@disaster.gov.in',
+        'password': 'test1234'
+    }, follow_redirects=True)
+    assert response.status_code == 200
+    assert b"Invalid email, password, or account type" in response.data
+
+
+def test_login_page_offers_public_volunteer_and_ndma(client):
+    response = client.get('/login')
+    assert response.status_code == 200
+    assert b'value="public" selected>Public' in response.data
+    assert b'value="volunteer">Volunteer' in response.data
+    assert b'value="ndma">NDMA Officer' in response.data
 
 def test_registration(client, app):
     response = client.post('/register', data={

@@ -7,6 +7,13 @@ from utils.database import db
 auth_bp = Blueprint('auth', __name__)
 bcrypt = Bcrypt()
 
+LOGIN_ACCOUNT_ROLES = {
+    'public': 'public',
+    'volunteer': 'responder',
+    'ndma': 'admin',
+}
+
+
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -15,14 +22,21 @@ def login():
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
-        
+        account_type = request.form.get('account_type', '').strip().lower()
+
         user = User.query.filter_by(email=email).first()
-        if user and bcrypt.check_password_hash(user.password_hash, password):
+        if (
+            account_type in LOGIN_ACCOUNT_ROLES
+            and user
+            and user.role == LOGIN_ACCOUNT_ROLES[account_type]
+            and password
+            and bcrypt.check_password_hash(user.password_hash, password)
+        ):
             login_user(user)
             flash('Logged in successfully!', 'success')
             return redirect(url_for('dashboard.index'))
         else:
-            flash('Invalid email or password.', 'danger')
+            flash('Invalid email, password, or account type.', 'danger')
             
     return render_template('login.html')
 

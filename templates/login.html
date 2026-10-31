@@ -45,35 +45,56 @@
             
             <form action="{{ url_for('auth.login') }}" method="POST">
                 <div class="mb-3">
-                    <label for="email" class="form-label text-secondary fw-semibold">Government Email</label>
+                    <label for="account_type" class="form-label text-secondary fw-semibold">Sign in as</label>
+                    <select class="form-select" id="account_type" name="account_type" required>
+                        <option value="public" selected>Public</option>
+                        <option value="volunteer">Volunteer</option>
+                        <option value="ndma">NDMA Officer</option>
+                    </select>
+                    <div class="form-text" id="account-type-help">Access public alerts and available community information.</div>
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label text-secondary fw-semibold">Email Address</label>
                     <div class="input-group">
                         <span class="input-group-text bg-light text-secondary"><i class="fa-solid fa-envelope"></i></span>
-                        <input type="email" class="form-control" id="email" name="email" required placeholder="name@disaster.gov.in">
+                        <input type="email" class="form-control" id="email" name="email" required autocomplete="username" placeholder="name@example.com">
                     </div>
                 </div>
                 <div class="mb-3">
                     <label for="password" class="form-label text-secondary fw-semibold">Secret Key/Password</label>
                     <div class="input-group">
                         <span class="input-group-text bg-light text-secondary"><i class="fa-solid fa-lock"></i></span>
-                        <input type="password" class="form-control" id="password" name="password" required placeholder="••••••••">
+                        <input type="password" class="form-control" id="password" name="password" required autocomplete="current-password" placeholder="••••••••">
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary w-100 fw-bold py-2 mb-3"><i class="fa-solid fa-right-to-bracket me-2"></i>Authenticate Credentials</button>
             </form>
             
             <div class="text-center border-top pt-3">
-                <small class="text-muted">Need response credentials? <a href="{{ url_for('auth.register') }}" class="text-primary text-decoration-none fw-semibold">Register Responder</a></small>
+                <small class="text-muted">New to ADRACS? <a href="{{ url_for('auth.register') }}" class="text-primary text-decoration-none fw-semibold">Create a public account</a></small>
             </div>
             
             <div class="bg-info bg-opacity-10 rounded p-2 mt-4 border border-info border-opacity-25">
-                <div class="fw-bold text-info" style="font-size: 0.8rem;"><i class="fa-solid fa-circle-info me-1"></i>Demonstration Accounts:</div>
+                <div class="fw-bold text-info" style="font-size: 0.8rem;"><i class="fa-solid fa-circle-info me-1"></i>Demonstration Accounts — choose the matching account type:</div>
                 <ul class="text-secondary m-0 ps-3" style="font-size: 0.75rem;">
-                    <li><strong>Admin</strong>: admin@disaster.gov.in / admin123</li>
-                    <li><strong>Responder</strong>: responder@disaster.gov.in / responder123</li>
-                    <li><strong>Citizen</strong>: citizen@disaster.gov.in / citizen123</li>
+                    <li><strong>NDMA Officer</strong>: admin@disaster.gov.in / admin123</li>
+                    <li><strong>Volunteer</strong>: responder@disaster.gov.in / responder123</li>
+                    <li><strong>Public</strong>: citizen@disaster.gov.in / citizen123</li>
                 </ul>
             </div>
         </div>
     </div>
+    <script>
+        const accountType = document.getElementById('account_type');
+        const accountTypeHelp = document.getElementById('account-type-help');
+        const accountTypeDescriptions = {
+            public: 'Access public alerts and available community information.',
+            volunteer: 'Sign in to volunteer tools using an authorized volunteer account.',
+            ndma: 'Sign in to NDMA coordination and administrative tools using an authorized officer account.'
+        };
+        accountType.addEventListener('change', () => {
+            accountTypeHelp.textContent = accountTypeDescriptions[accountType.value];
+        });
+    </script>
 </body>
 </html>

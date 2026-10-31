@@ -89,7 +89,6 @@ The Operations Center at `/command-center` adds:
 * Persisted road-condition events that rerun route and team allocation recommendations.
 * Shelter occupancy and accessibility records, with unknown information identified explicitly.
 * A repeatable, synthetic Pune demonstration scenario.
-* A repeatable, synthetic Chennai flood/cyclone scenario with Adyar, Velachery, Ennore, and Perungudi operations data.
 
 The demonstration road network is a stored graph, not a live road feed. The map shows its recorded edges; graph routes include an explicit warning that routing output does not certify road safety. Where no graph route exists, the interface labels the route unknown rather than presenting a straight-line estimate as a safe route.
 
@@ -820,9 +819,9 @@ Self-registered accounts are public/read-only; operational roles must be granted
 To run the repeatable road-disruption demonstration:
 
 1. Sign in as the seeded admin and open Operations Center.
-2. Select **Pune simulation** or **Chennai simulation**, then **Load scenario**. This inserts labeled synthetic data and does not delete existing records.
+2. Select **Load simulated scenario**. This inserts labeled synthetic data and does not delete existing records.
 3. Generate an allocation plan, inspect evidence conflicts and priorities, and approve or reject the proposal.
-4. Mark a scenario road such as **[SIM] Riverside bridge** or **[SIM-CHENNAI] Adyar bridge approach** inaccessible. The event is persisted and uses the stored road graph to recalculate a proposal and compare it with the previous plan.
+4. Mark **[SIM] Riverside bridge** inaccessible. The event is persisted and uses the stored road graph to recalculate a proposal and compare it with the previous plan.
 5. Review the revised proposal. Approval records a decision; it does not dispatch a real team.
 
 Evidence and priority values are configurable deterministic heuristics, not calibrated probabilities.

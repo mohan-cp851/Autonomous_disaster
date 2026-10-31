@@ -26,6 +26,7 @@ def app():
 def authenticated_client(app):
     client = app.test_client()
     client.post('/login', data={
+        'account_type': 'ndma',
         'email': 'admin@disaster.gov.in',
         'password': 'admin123'
     })

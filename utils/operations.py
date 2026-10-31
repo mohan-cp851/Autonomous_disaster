@@ -16,7 +16,6 @@ from models.operations import (
     AuditRecord,
     EvidenceReport,
     PriorityAssessmentRecord,
-    PriorityAssessmentRecord,
     RoadSegment,
     ShelterCondition,
 )
@@ -688,20 +687,6 @@ def audit(action, object_type, object_id, user_id, details):
         user_id=user_id,
         details=json.dumps(details, sort_keys=True),
     ))
-
-
-def record_priority_assessment(incident, trigger, user_id=None):
-    assessment = priority_assessment(incident)
-    db.session.add(PriorityAssessmentRecord(
-        incident_id=incident.id,
-        priority=assessment['priority'],
-        score=assessment['score'],
-        factors=json.dumps(assessment['factors'], sort_keys=True),
-        rationale=assessment['rationale'],
-        trigger=trigger[:120],
-        user_id=user_id,
-    ))
-    return assessment
 
 
 def shelter_payload(shelter):

@@ -11,7 +11,6 @@ from models.operations import (
     AuditRecord,
     EvidenceReport,
     PlanApproval,
-    PriorityAssessmentRecord,
     ReplanEvent,
     RoadSegment,
     ShelterCondition,
@@ -31,7 +30,6 @@ from utils.operations import (
     parse_datetime,
     plan_payload,
     priority_assessment,
-    record_priority_assessment,
     recommend_shelters,
     shelter_payload,
     update_incident_verification,
@@ -44,105 +42,6 @@ SOURCE_TYPES = set(SOURCE_RELIABILITY)
 SEVERITIES = {'Low', 'Medium', 'High', 'Critical'}
 DISASTER_TYPES = {'flood', 'earthquake', 'fire', 'cyclone', 'landslide', 'tsunami'}
 EVIDENCE_STATES = {'Verified', 'Rejected', 'Inconclusive', 'Superseded'}
-DEMO_SCENARIOS = {
-    'pune': {
-        'name': 'Pune',
-        'scenario_key': 'pune-disruption-v1',
-        'area': 'Pune demonstration area',
-        'depot': 'Pune demonstration depot',
-        'incidents': [
-            ('[SIM] Riverside flooding', 'flood', 'Critical', (18.5214, 73.8567), 80,
-             'Floodwater is approaching homes beside the river road.'),
-            ('[SIM] Neighborhood structural damage', 'earthquake', 'High', (18.5190, 73.8510), 35,
-             'Several buildings are damaged and residents report trapped occupants.'),
-            ('[SIM] Market building fire', 'fire', 'High', (18.5240, 73.8610), 24,
-             'A commercial building fire is producing heavy smoke.'),
-            ('[SIM] Hillside slope movement', 'landslide', 'Medium', (18.5160, 73.8590), 18,
-             'Residents report fresh slope movement near a hillside settlement.'),
-        ],
-        'evidence': [
-            (0, 'Citizen', 'INC-1-REPORT-A', 'Residents see water covering the river approach.', 'road_access', 'Open'),
-            (0, 'Sensor', 'INC-1-SENSOR', 'Water-level sensor records a rapid rise near the river road.', 'road_access', 'Closed'),
-            (0, 'Citizen', 'INC-1-REPORT-A', 'Residents see water covering the river approach.', 'road_access', 'Open'),
-            (1, 'Field Team', 'INC-2-FIELD', 'Field officer confirms visible structural damage.', 'severity', 'High'),
-        ],
-        'teams': [
-            ('Boat flood team', 'Flood Rescue', 20, (18.5204, 73.8567)),
-            ('Urban search team', 'Search & Rescue', 16, (18.5214, 73.8760)),
-            ('Medical response team', 'Medical Assistance', 12, (18.5190, 73.8505)),
-            ('Fire response team', 'Fire / Hazmat', 14, (18.5240, 73.8605)),
-        ],
-        'resources': [('Medical kits', 'Medical', 20), ('Food packages', 'Food', 30), ('Drinking water', 'Water', 30)],
-        'shelters': [
-            ('Riverside community shelter', 18.5260, 73.8640, 120, 25, 'Accessible'),
-            ('Hillside relief center', 18.5140, 73.8550, 60, 58, 'Unknown'),
-        ],
-        'roads': [
-            ('Riverside bridge', (18.5204, 73.8567), (18.5214, 73.8567)),
-            ('Boat depot connector', (18.5204, 73.8567), (18.5214, 73.8767)),
-            ('Riverside alternate approach', (18.5214, 73.8767), (18.5214, 73.8567)),
-            ('Search team corridor', (18.5214, 73.8760), (18.5214, 73.8767)),
-            ('Structural response corridor', (18.5190, 73.8510), (18.5190, 73.8505)),
-            ('Market response corridor', (18.5240, 73.8610), (18.5240, 73.8605)),
-            ('Hillside response corridor', (18.5160, 73.8590), (18.5160, 73.8595)),
-            ('Shelter access corridor', (18.5214, 73.8767), (18.5260, 73.8640)),
-        ],
-    },
-    'chennai': {
-        'name': 'Chennai',
-        'scenario_key': 'chennai-flood-v1',
-        'area': 'Chennai synthetic demonstration area',
-        'depot': 'Chennai synthetic demonstration depot',
-        'incidents': [
-            ('[SIM-CHENNAI] Adyar river flooding', 'flood', 'Critical', (13.0067, 80.2572), 120,
-             'Synthetic report of rising water affecting low-lying homes near the Adyar river.'),
-            ('[SIM-CHENNAI] Velachery street inundation', 'flood', 'High', (12.9750, 80.2210), 75,
-             'Synthetic report of waterlogging affecting residents and access roads in Velachery.'),
-            ('[SIM-CHENNAI] Ennore cyclone shelter request', 'cyclone', 'High', (13.2150, 80.3210), 90,
-             'Synthetic high-wind alert with residents requesting transport to a designated demonstration shelter.'),
-            ('[SIM-CHENNAI] Perungudi market fire', 'fire', 'Medium', (12.9611, 80.2430), 30,
-             'Synthetic report of a market-area fire with smoke affecting nearby streets.'),
-        ],
-        'evidence': [
-            (0, 'Citizen', 'ADYAR-REPORT-A', 'Synthetic resident report: water is covering the approach road.', 'road_access', 'Open'),
-            (0, 'Sensor', 'ADYAR-GAUGE-1', 'Synthetic water-level observation indicates the approach is inundated.', 'road_access', 'Closed'),
-            (0, 'Citizen', 'ADYAR-REPORT-A', 'Synthetic resident report: water is covering the approach road.', 'road_access', 'Open'),
-            (0, 'Field Team', 'ADYAR-FIELD-1', 'Synthetic field-team corroboration: water is rising near the homes.', 'water_trend', 'Rising'),
-            (1, 'Citizen', 'VELACHERY-REPORT-A', 'Synthetic report of waterlogged streets and slow vehicle access.', 'road_access', 'Restricted'),
-            (2, 'Government', 'ENNORE-ALERT-SIM', 'Synthetic demonstration alert; not an official weather warning.', 'source_status', 'Simulated'),
-            (3, 'Field Team', 'PERUNGUDI-FIELD-SIM', 'Synthetic field observer reports smoke near the market.', 'fire_status', 'Active'),
-        ],
-        'teams': [
-            ('Adyar boat rescue team', 'Flood Rescue', 24, (13.0073, 80.2568)),
-            ('Velachery urban response team', 'Search & Rescue', 18, (12.9740, 80.2195)),
-            ('North Chennai cyclone response team', 'Cyclone Rescue', 20, (13.2140, 80.3195)),
-            ('Perungudi fire and medical team', 'Fire / Hazmat', 16, (12.9605, 80.2420)),
-        ],
-        'resources': [
-            ('Medical kits', 'Medical', 45),
-            ('Family food packs', 'Food', 60),
-            ('Drinking water packs', 'Water', 60),
-            ('Rescue boat kits', 'Vehicle', 4),
-        ],
-        'shelters': [
-            ('Adyar synthetic relief center', 13.0120, 80.2620, 180, 55, 'Accessible'),
-            ('Velachery synthetic community shelter', 12.9810, 80.2260, 140, 132, 'Unknown'),
-            ('North Chennai synthetic cyclone shelter', 13.2200, 80.3260, 260, 100, 'Accessible'),
-        ],
-        'roads': [
-            ('Adyar bridge approach', (13.0073, 80.2568), (13.0067, 80.2572)),
-            ('Adyar northern detour connector', (13.0073, 80.2568), (13.0120, 80.2600)),
-            ('Adyar alternate river approach', (13.0120, 80.2600), (13.0067, 80.2572)),
-            ('Velachery response corridor', (12.9740, 80.2195), (12.9750, 80.2210)),
-            ('Velachery alternate access', (12.9740, 80.2195), (12.9800, 80.2240)),
-            ('Velachery shelter connector', (12.9800, 80.2240), (12.9750, 80.2210)),
-            ('Ennore cyclone response corridor', (13.2140, 80.3195), (13.2150, 80.3210)),
-            ('Perungudi fire response corridor', (12.9605, 80.2420), (12.9611, 80.2430)),
-            ('Adyar shelter access', (13.0120, 80.2600), (13.0120, 80.2620)),
-            ('North Chennai shelter access', (13.2150, 80.3210), (13.2200, 80.3260)),
-        ],
-    },
-}
 
 
 def _operator():
@@ -224,14 +123,6 @@ def overview():
         'incidents': [{
             **incident.to_dict(),
             'priority_assessment': priority_assessment(incident),
-            'priority_history': [{
-                'priority': record.priority,
-                'score': record.score,
-                'trigger': record.trigger,
-                'created_at': _timestamp(record.created_at),
-            } for record in PriorityAssessmentRecord.query.filter_by(
-                incident_id=incident.id
-            ).order_by(PriorityAssessmentRecord.created_at.desc()).limit(5).all()],
         } for incident in incidents],
         'teams': [team.to_dict() for team in RescueTeam.query.order_by(RescueTeam.id).all()],
         'resources': [item.to_dict() for item in Resource.query.order_by(Resource.id).all()],
@@ -313,7 +204,6 @@ def create_incident():
         submitted_by_id=current_user.id,
     )
     db.session.add(evidence)
-    record_priority_assessment(incident, 'Incident report created', current_user.id)
     audit('incident.created', 'incident', incident.id, current_user.id, {'source_type': source_type})
     error = _commit_or_error()
     if error:
@@ -329,22 +219,11 @@ def create_incident():
 @login_required
 def incident_assessment(incident_id):
     incident = Incident.query.get_or_404(incident_id)
-    history = PriorityAssessmentRecord.query.filter_by(incident_id=incident.id).order_by(
-        PriorityAssessmentRecord.created_at.desc()
-    ).limit(20).all()
     return jsonify({
         'success': True,
         'incident': incident.to_dict(),
         'priority': priority_assessment(incident),
         'potential_duplicates': incident_duplicates(incident),
-        'priority_history': [{
-            'priority': item.priority,
-            'score': item.score,
-            'factors': json.loads(item.factors),
-            'rationale': item.rationale,
-            'trigger': item.trigger,
-            'created_at': _timestamp(item.created_at),
-        } for item in history],
     })
 
 
@@ -385,7 +264,6 @@ def submit_evidence(incident_id):
     db.session.add(report)
     db.session.flush()
     update_incident_verification(incident)
-    record_priority_assessment(incident, 'Evidence submitted', current_user.id)
     audit('evidence.submitted', 'evidence', report.id, current_user.id, {'incident_id': incident.id})
     error = _commit_or_error()
     if error:
@@ -413,7 +291,6 @@ def review_evidence(evidence_id):
     report.reviewed_by_id = current_user.id
     report.reviewed_at = datetime.utcnow()
     update_incident_verification(report.incident)
-    record_priority_assessment(report.incident, f'Evidence {state.lower()}', current_user.id)
     audit('evidence.reviewed', 'evidence', report.id, current_user.id, {
         'status': state,
         'reason': note,
@@ -696,62 +573,94 @@ def initialize_demo():
     if current_user.role != 'admin':
         return _forbidden()
 
-    data = request.get_json(silent=True) or {}
-    scenario_name = str(data.get('scenario', 'pune')).strip().lower()
-    scenario = DEMO_SCENARIOS.get(scenario_name)
-    if scenario is None:
-        return jsonify({
-            'success': False,
-            'error': 'Unknown scenario. Choose "pune" or "chennai".',
-        }), 400
-
-    demo_incidents = scenario['incidents']
+    demo_incidents = [
+        {
+            'title': '[SIM] Riverside flooding',
+            'type': 'flood',
+            'severity': 'Critical',
+            'location': 'Pune demonstration area',
+            'coordinates': (18.5214, 73.8567),
+            'affected': 80,
+            'description': 'Floodwater is approaching homes beside the river road.',
+        },
+        {
+            'title': '[SIM] Neighborhood structural damage',
+            'type': 'earthquake',
+            'severity': 'High',
+            'location': 'Pune demonstration area',
+            'coordinates': (18.5190, 73.8510),
+            'affected': 35,
+            'description': 'Several buildings are damaged and residents report trapped occupants.',
+        },
+        {
+            'title': '[SIM] Market building fire',
+            'type': 'fire',
+            'severity': 'High',
+            'location': 'Pune demonstration area',
+            'coordinates': (18.5240, 73.8610),
+            'affected': 24,
+            'description': 'A commercial building fire is producing heavy smoke.',
+        },
+        {
+            'title': '[SIM] Hillside slope movement',
+            'type': 'landslide',
+            'severity': 'Medium',
+            'location': 'Pune demonstration area',
+            'coordinates': (18.5160, 73.8590),
+            'affected': 18,
+            'description': 'Residents report fresh slope movement near a hillside settlement.',
+        },
+    ]
     existing = {
         incident.title: incident
         for incident in Incident.query.filter(
-            Incident.title.in_([item[0] for item in demo_incidents])
+            Incident.title.in_([item['title'] for item in demo_incidents])
         ).all()
     }
     if existing:
         if len(existing) != len(demo_incidents):
             return jsonify({
                 'success': False,
-                'error': f'A partial {scenario["name"]} simulation scenario already exists; no records were changed.',
+                'error': 'A partial simulation scenario already exists; no records were changed.',
             }), 409
         return jsonify({
             'success': True,
             'already_initialized': True,
-            'scenario': scenario_name,
-            'incident_ids': [existing[item[0]].id for item in demo_incidents],
-            'message': f'The deterministic simulated {scenario["name"]} scenario is already initialized.',
+            'incident_ids': [existing[item['title']].id for item in demo_incidents],
+            'message': 'The deterministic simulation scenario is already initialized.',
         })
 
     incidents = []
     now = datetime.utcnow()
-    for title, disaster_type, severity, coordinates, affected, description in demo_incidents:
+    for item in demo_incidents:
         incident = Incident(
-            title=title,
-            disaster_type=disaster_type,
-            severity=severity,
-            location_name=scenario['area'],
-            latitude=coordinates[0],
-            longitude=coordinates[1],
-            description=description,
+            title=item['title'],
+            disaster_type=item['type'],
+            severity=item['severity'],
+            location_name=item['location'],
+            latitude=item['coordinates'][0],
+            longitude=item['coordinates'][1],
+            description=item['description'],
             reported_by='Simulation scenario',
             created_at=now,
-            affected_count=affected,
+            affected_count=item['affected'],
             verification_status='Pending Review',
         )
         db.session.add(incident)
         incidents.append(incident)
     db.session.flush()
 
-    for incident_index, source, reference, description, claim_type, claim_value in scenario['evidence']:
-        incident = incidents[incident_index]
+    reports = [
+        (incidents[0], 'Citizen', 'SIM-INC-1-REPORT-A', 'Residents see water covering the river approach.', 'road_access', 'Open'),
+        (incidents[0], 'Sensor', 'SIM-INC-1-SENSOR', 'Water-level sensor records a rapid rise near the river road.', 'road_access', 'Closed'),
+        (incidents[0], 'Citizen', 'SIM-INC-1-REPORT-A', 'Residents see water covering the river approach.', 'road_access', 'Open'),
+        (incidents[1], 'Field Team', 'SIM-INC-2-FIELD', 'Field officer confirms visible structural damage.', 'severity', 'High'),
+    ]
+    for incident, source, reference, description, claim_type, claim_value in reports:
         db.session.add(EvidenceReport(
             incident=incident,
             source_type=source,
-            source_reference=f'{scenario_name.upper()}-{reference}',
+            source_reference=reference,
             description=description,
             claim_type=claim_type,
             claim_value=claim_value,
@@ -759,17 +668,16 @@ def initialize_demo():
             submitted_by_id=current_user.id,
         ))
         update_incident_verification(incident)
-    for incident in incidents:
-        record_priority_assessment(
-            incident,
-            f'{scenario["name"]} simulation initialized',
-            current_user.id,
-        )
 
-    prefix = f'[SIM-{scenario_name.upper()}]'
-    for name, specialization, members, coordinates in scenario['teams']:
+    teams_data = [
+        ('[SIM] Boat flood team', 'Flood Rescue', 20, (18.5204, 73.8567)),
+        ('[SIM] Urban search team', 'Search & Rescue', 16, (18.5214, 73.8760)),
+        ('[SIM] Medical response team', 'Medical Assistance', 12, (18.5190, 73.8505)),
+        ('[SIM] Fire response team', 'Fire / Hazmat', 14, (18.5240, 73.8605)),
+    ]
+    for name, specialization, members, coordinates in teams_data:
         db.session.add(RescueTeam(
-            name=f'{prefix} {name}',
+            name=name,
             specialization=specialization,
             members_count=members,
             status='Available',
@@ -778,20 +686,28 @@ def initialize_demo():
             contact_number='SIM',
         ))
 
-    for name, category, quantity in scenario['resources']:
+    for name, category, quantity in (
+        ('[SIM] Medical kits', 'Medical', 20),
+        ('[SIM] Food packages', 'Food', 30),
+        ('[SIM] Drinking water', 'Water', 30),
+    ):
         db.session.add(Resource(
-            name=f'{prefix} {name}',
+            name=name,
             resource_type=category,
             total_qty=quantity,
             allocated_qty=0,
-            location_name=scenario['depot'],
+            location_name='Pune demonstration depot',
         ))
 
+    shelters_data = [
+        ('[SIM] Riverside community shelter', 18.5260, 73.8640, 120, 25, 'Accessible'),
+        ('[SIM] Hillside relief center', 18.5140, 73.8550, 60, 58, 'Unknown'),
+    ]
     shelters = []
-    for name, latitude, longitude, capacity, occupancy, accessibility in scenario['shelters']:
+    for name, latitude, longitude, capacity, occupancy, accessibility in shelters_data:
         shelter = Shelter(
-            name=f'{prefix} {name}',
-            location_name=scenario['area'],
+            name=name,
+            location_name='Pune demonstration area',
             latitude=latitude,
             longitude=longitude,
             capacity=capacity,
@@ -808,12 +724,23 @@ def initialize_demo():
             shelter_id=shelter.id,
             accessibility_status=accessibility,
             facilities='First aid, accessible water point' if accessibility == 'Accessible' else None,
-            information_source=f'Simulated {scenario["name"]} demonstration data',
+            information_source='Simulated demonstration data',
         ))
 
-    for name, start, end in scenario['roads']:
+    junction = (18.5214, 73.8767)
+    road_specs = [
+        ('[SIM] Riverside bridge', (18.5204, 73.8567), (18.5214, 73.8567)),
+        ('[SIM] Boat depot connector', (18.5204, 73.8567), junction),
+        ('[SIM] Riverside alternate approach', junction, (18.5214, 73.8567)),
+        ('[SIM] Search team corridor', (18.5214, 73.8760), junction),
+        ('[SIM] Structural response corridor', (18.5190, 73.8505), junction),
+        ('[SIM] Market response corridor', (18.5240, 73.8605), junction),
+        ('[SIM] Hillside response corridor', (18.5160, 73.8590), junction),
+        ('[SIM] Shelter access corridor', junction, (18.5260, 73.8640)),
+    ]
+    for name, start, end in road_specs:
         db.session.add(RoadSegment(
-            name=f'{prefix} {name}',
+            name=name,
             start_lat=start[0],
             start_lng=start[1],
             end_lat=end[0],
@@ -823,11 +750,10 @@ def initialize_demo():
             source_reference='SIM-ROAD-NETWORK',
             updated_by_id=current_user.id,
             updated_at=now,
-            scenario_key=scenario['scenario_key'],
+            scenario_key='pune-disruption-v1',
         ))
     audit('demo.initialized', 'scenario', None, current_user.id, {
-        'scenario_key': scenario['scenario_key'],
-        'city': scenario['name'],
+        'scenario_key': 'pune-disruption-v1',
         'simulated': True,
         'incident_ids': [incident.id for incident in incidents],
     })
@@ -838,11 +764,10 @@ def initialize_demo():
         'success': True,
         'already_initialized': False,
         'simulated': True,
-        'scenario': scenario_name,
         'incident_ids': [incident.id for incident in incidents],
         'road_segments': [
             _road_payload(segment)
-            for segment in RoadSegment.query.filter_by(scenario_key=scenario['scenario_key']).all()
+            for segment in RoadSegment.query.filter_by(scenario_key='pune-disruption-v1').all()
         ],
-        'message': f'Deterministic simulated {scenario["name"]} scenario initialized. It does not represent live conditions.',
+        'message': 'Deterministic simulated scenario initialized. It does not represent live conditions.',
     }), 201
